@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Search, User, AlertTriangle, X } from 'lucide-react';
+import { Search, User, AlertTriangle, X, FileText } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useUser } from '../context/UserContext';
 
 const Patients = () => {
+  const { user } = useUser();
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [reportLanguage, setReportLanguage] = useState('English');
 
   useEffect(() => {
     fetchPatients();
@@ -16,9 +19,9 @@ const Patients = () => {
 
   const fetchPatients = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/get-patients');
+      const res = await axios.get(`http://localhost:5001/get-assigned-patients?doctor_id=${user.id}`);
       const patientsWithRisk = await Promise.all(res.data.map(async (p) => {
-        const riskRes = await axios.get(`http://127.0.0.1:5000/alerts?user_id=${p.id}`);
+        const riskRes = await axios.get(`http://localhost:5001/alerts?user_id=${p.id}`);
         return { ...p, risk: riskRes.data.current_risk, alerts: riskRes.data.alerts };
       }));
       setPatients(patientsWithRisk);
@@ -29,7 +32,7 @@ const Patients = () => {
     setLoadingHistory(true);
     setSelectedPatient(patient);
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/get-data?user_id=${patient.id}`);
+      const res = await axios.get(`http://localhost:5001/get-data?user_id=${patient.id}`);
       setHistory(res.data.reverse());
     } catch (err) { console.error(err); }
     setLoadingHistory(false);
@@ -38,6 +41,17 @@ const Patients = () => {
   const filteredPatients = patients.filter(p => 
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const generateReport = async (patient) => {
+    try {
+      const res = await axios.get(`http://localhost:5001/generate-report?patient_id=${patient.id}&language=${reportLanguage}`);
+      alert(`Report generated for ${patient.full_name} in ${reportLanguage}`);
+      console.log('Report:', res.data);
+    } catch (err) {
+      alert('Error generating report');
+      console.error(err);
+    }
+  };
 
   return (
     <div>
@@ -83,17 +97,27 @@ const Patients = () => {
               </div>
             )}
 
-            <button 
-              onClick={() => fetchHistory(patient)}
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.875rem' }}
-            >
-              View Clinical History
-            </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button 
+                onClick={() => fetchHistory(patient)}
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.875rem', width: '100%' }}
+              >
+                View History
+              </button>
+              <button 
+                onClick={() => generateReport(patient)}
+                style={{ background: 'var(--primary)', color: '#fff', fontSize: '0.875rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <FileText size={16} />
+                View Report
+              </button>
+            </div>
           </div>
         ))}
         {filteredPatients.length === 0 && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                No patients found matching your search.
+                <p style={{ fontSize: '1rem', marginBottom: '1rem' }}>No assigned patients found.</p>
+                <p style={{ fontSize: '0.875rem' }}>Go to "Add Patients" to assign patients to your care.</p>
             </div>
         )}
       </div>
