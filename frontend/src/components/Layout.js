@@ -8,7 +8,9 @@ import {
   Cpu, 
   LogOut, 
   Users,
-  Activity
+  Activity,
+  UserPlus,
+  FileText
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -23,11 +25,13 @@ const Layout = ({ children }) => {
   const navItems = user?.role === 'doctor' ? [
     { path: '/doctor-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/patients', icon: Users, label: 'Patients' },
+    { path: '/add-patients', icon: UserPlus, label: 'Add Patients' },
     { path: '/alerts', icon: Bell, label: 'Alerts' },
   ] : [
     { path: '/patient-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/records', icon: History, label: 'Health Records' },
     { path: '/devices', icon: Cpu, label: 'Devices' },
+    { path: '/generate-report', icon: FileText, label: 'Generate Report' },
     { path: '/alerts', icon: Bell, label: 'Alerts' },
   ];
 

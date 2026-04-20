@@ -54,6 +54,18 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
+    # Doctor-Patient mapping table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS doctor_patients (
+            id TEXT PRIMARY KEY,
+            doctor_id TEXT,
+            patient_id TEXT,
+            assigned_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(doctor_id) REFERENCES users(id),
+            FOREIGN KEY(patient_id) REFERENCES users(id),
+            UNIQUE(doctor_id, patient_id)
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -65,14 +77,26 @@ init_db()
 def signup():
     data = request.json
     print(f"Signup attempt: {data.get('username')} as {data.get('role')}")
-    uid = str(uuid.uuid4())
+    
     conn = get_db_connection()
+    # Check if username already exists
+    existing_user = conn.execute('SELECT * FROM users WHERE username = ?', (data['username'],)).fetchone()
+    if existing_user:
+        conn.close()
+        return jsonify({"error": "Username already exists"}), 400
+    
+    uid = str(uuid.uuid4())
     try:
         conn.execute('INSERT INTO users (id, username, password, role, full_name) VALUES (?, ?, ?, ?, ?)',
                      (uid, data['username'], data['password'], data['role'], data['full_name']))
         conn.commit()
         print(f"Signup successful: {data.get('username')}")
         return jsonify({"message": "User created", "user": {"id": uid, "role": data['role'], "full_name": data['full_name']}})
+    except sqlite3.IntegrityError as e:
+        print(f"Signup failed (IntegrityError): {str(e)}")
+        if "UNIQUE constraint failed: users.username" in str(e):
+            return jsonify({"error": "Username already exists. Please choose a different one."}), 400
+        return jsonify({"error": "Database error occurred during signup."}), 400
     except Exception as e:
         print(f"Signup failed: {str(e)}")
         return jsonify({"error": str(e)}), 400
@@ -191,7 +215,170 @@ def alerts():
 
     return jsonify({"alerts": alerts_list, "current_risk": row['risk_level'] if row else "Unknown"})
 
+# --- Doctor-Patient Mapping Endpoints ---
+
+@app.route('/get-available-patients', methods=['GET'])
+def get_available_patients():
+    doctor_id = request.args.get("doctor_id")
+    conn = get_db_connection()
+    
+    # Get all patients that are not yet assigned to this doctor
+    rows = conn.execute("""
+        SELECT id, full_name FROM users 
+        WHERE role = 'patient' 
+        AND id NOT IN (
+            SELECT patient_id FROM doctor_patients WHERE doctor_id = ?
+        )
+    """, (doctor_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/add-patient-to-doctor', methods=['POST'])
+def add_patient_to_doctor():
+    data = request.json
+    doctor_id = data.get("doctor_id")
+    patient_id = data.get("patient_id")
+    
+    conn = get_db_connection()
+    try:
+        conn.execute("""INSERT INTO doctor_patients (id, doctor_id, patient_id) 
+                        VALUES (?, ?, ?)""",
+                     (str(uuid.uuid4()), doctor_id, patient_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Patient added successfully"})
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({"error": "Patient already assigned to this doctor"}), 400
+    except Exception as e:
+        conn.close()
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/get-assigned-patients', methods=['GET'])
+def get_assigned_patients():
+    doctor_id = request.args.get("doctor_id")
+    conn = get_db_connection()
+    
+    rows = conn.execute("""
+        SELECT u.id, u.full_name, dp.assigned_date FROM users u
+        INNER JOIN doctor_patients dp ON u.id = dp.patient_id
+        WHERE dp.doctor_id = ?
+        ORDER BY dp.assigned_date DESC
+    """, (doctor_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/generate-report', methods=['GET'])
+def generate_report():
+    patient_id = request.args.get("patient_id")
+    language = request.args.get("language", "English")  # English or Tamil
+    
+    conn = get_db_connection()
+    
+    # Get patient info
+    patient = conn.execute("SELECT * FROM users WHERE id = ?", (patient_id,)).fetchone()
+    
+    # Get latest health data
+    latest_data = conn.execute("""
+        SELECT * FROM health_data WHERE user_id = ? 
+        ORDER BY timestamp DESC LIMIT 1
+    """, (patient_id,)).fetchone()
+    
+    # Get average readings (last 7 readings)
+    health_records = conn.execute("""
+        SELECT * FROM health_data WHERE user_id = ? 
+        ORDER BY timestamp DESC LIMIT 7
+    """, (patient_id,)).fetchall()
+    
+    conn.close()
+    
+    if not patient:
+        return jsonify({"error": "Patient not found"}), 404
+    
+    # Calculate averages
+    avg_hr = sum([r['heart_rate'] for r in health_records]) / len(health_records) if health_records else 0
+    avg_spo2 = sum([r['spo2'] for r in health_records]) / len(health_records) if health_records else 0
+    avg_temp = sum([r['temperature'] for r in health_records]) / len(health_records) if health_records else 0
+    avg_sys = sum([r['systolic'] for r in health_records]) / len(health_records) if health_records else 0
+    avg_dia = sum([r['diastolic'] for r in health_records]) / len(health_records) if health_records else 0
+    avg_glucose = sum([r['glucose'] for r in health_records]) / len(health_records) if health_records else 0
+    
+    # Language dictionaries
+    labels = {
+        "English": {
+            "title": "Health Report",
+            "patient_name": "Patient Name",
+            "patient_id": "Patient ID",
+            "report_date": "Report Date",
+            "heart_rate": "Heart Rate (BPM)",
+            "spo2": "Blood Oxygen (SpO2) %",
+            "temperature": "Temperature (°C)",
+            "systolic": "Systolic BP (mmHg)",
+            "diastolic": "Diastolic BP (mmHg)",
+            "glucose": "Glucose (mg/dL)",
+            "latest": "Latest Reading",
+            "average": "7-Day Average",
+            "risk_level": "Current Risk Level",
+            "status": "Health Status",
+            "recommendations": "Recommendations",
+            "normal": "Normal",
+            "monitor": "Monitor regularly",
+            "consult": "Consult doctor"
+        },
+        "Tamil": {
+            "title": "சுகாதார அறிக்கை",
+            "patient_name": "நோயாளியின் பெயர்",
+            "patient_id": "நோயாளி ID",
+            "report_date": "அறிக்கை தேதி",
+            "heart_rate": "இதய துடிப்பு (BPM)",
+            "spo2": "இரத இராசியன் நிலை (SpO2) %",
+            "temperature": "வெப்பநிலை (°C)",
+            "systolic": "சிস்டலிக் BP (mmHg)",
+            "diastolic": "டায়াস்টலிக் BP (mmHg)",
+            "glucose": "குளுக்கோஸ் (mg/dL)",
+            "latest": "சமீபத்திய வாசிப்பு",
+            "average": "7 நாள் சராசரி",
+            "risk_level": "தற்போதைய ঝுக்கம் நிலை",
+            "status": "சுகாதார நிலை",
+            "recommendations": "பரிந்துரைகள்",
+            "normal": "சாதாரணமானது",
+            "monitor": "தவறாமல் கண்காணிக்கவும்",
+            "consult": "மருத்துவரை அணுகவும்"
+        }
+    }
+    
+    lang = labels.get(language, labels["English"])
+    
+    report = {
+        "title": lang["title"],
+        "patient": {
+            "name": patient['full_name'],
+            "id": patient_id
+        },
+        "report_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "latest_reading": {
+            lang["heart_rate"]: latest_data['heart_rate'] if latest_data else "--",
+            lang["spo2"]: latest_data['spo2'] if latest_data else "--",
+            lang["temperature"]: latest_data['temperature'] if latest_data else "--",
+            lang["systolic"]: latest_data['systolic'] if latest_data else "--",
+            lang["diastolic"]: latest_data['diastolic'] if latest_data else "--",
+            lang["glucose"]: latest_data['glucose'] if latest_data else "--",
+        },
+        "average_7_days": {
+            lang["heart_rate"]: round(avg_hr, 1),
+            lang["spo2"]: round(avg_spo2, 1),
+            lang["temperature"]: round(avg_temp, 1),
+            lang["systolic"]: round(avg_sys, 1),
+            lang["diastolic"]: round(avg_dia, 1),
+            lang["glucose"]: round(avg_glucose, 1),
+        },
+        "risk_level": latest_data['risk_level'] if latest_data else "Unknown",
+        "language": language
+    }
+    
+    return jsonify(report)
+
 if __name__ == '__main__':
     print(f"Starting server... Database: {os.path.abspath(DB_PATH)}")
     app.run(debug=True, host='0.0.0.0', port=5001)
-
+

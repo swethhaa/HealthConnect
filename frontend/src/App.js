@@ -9,6 +9,8 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import Patients from './pages/Patients';
 import HealthRecords from './pages/HealthRecords';
 import DeviceManagement from './pages/DeviceManagement';
+import AddPatients from './pages/AddPatients';
+import ReportGeneration from './pages/ReportGeneration';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useUser();
@@ -52,6 +54,18 @@ function App() {
           <Route path="/devices" element={
             <ProtectedRoute role="patient">
               <DeviceManagement />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/add-patients" element={
+            <ProtectedRoute role="doctor">
+              <AddPatients />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/generate-report" element={
+            <ProtectedRoute role="patient">
+              <ReportGeneration />
             </ProtectedRoute>
           } />
 
