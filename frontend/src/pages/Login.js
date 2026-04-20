@@ -13,7 +13,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/login', { username, password });
+      const res = await axios.post('http://127.0.0.1:5001/login', { username, password });
       if (res.data && res.data.user) {
         login(res.data.user);
         navigate(res.data.user.role === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
