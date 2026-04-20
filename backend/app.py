@@ -64,14 +64,17 @@ init_db()
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
+    print(f"Signup attempt: {data.get('username')} as {data.get('role')}")
     uid = str(uuid.uuid4())
     conn = get_db_connection()
     try:
         conn.execute('INSERT INTO users (id, username, password, role, full_name) VALUES (?, ?, ?, ?, ?)',
                      (uid, data['username'], data['password'], data['role'], data['full_name']))
         conn.commit()
+        print(f"Signup successful: {data.get('username')}")
         return jsonify({"message": "User created", "user": {"id": uid, "role": data['role'], "full_name": data['full_name']}})
     except Exception as e:
+        print(f"Signup failed: {str(e)}")
         return jsonify({"error": str(e)}), 400
     finally:
         conn.close()
@@ -79,12 +82,16 @@ def signup():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
+    print(f"Login attempt: {data.get('username')}")
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?', 
                         (data['username'], data['password'])).fetchone()
     conn.close()
     if user:
-        return jsonify({"user": dict(user)})
+        user_dict = dict(user)
+        print(f"Login successful: {user_dict['username']} (Role: {user_dict['role']})")
+        return jsonify({"user": user_dict})
+    print(f"Login failed: Invalid credentials for {data.get('username')}")
     return jsonify({"error": "Invalid credentials"}), 401
 
 # --- Health Data Endpoints ---
