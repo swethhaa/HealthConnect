@@ -14,7 +14,7 @@ const DeviceManagement = () => {
 
   const fetchDevices = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/get-devices?user_id=${user.id}`);
+      const res = await axios.get(`http://localhost:5001/get-devices?user_id=${user.id}`);
       setDevices(res.data);
     } catch (err) { console.error(err); }
   };
@@ -22,7 +22,7 @@ const DeviceManagement = () => {
   const addDevice = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/add-device', { name: newDevice, user_id: user.id });
+      await axios.post('http://localhost:5001/add-device', { name: newDevice, user_id: user.id });
       setNewDevice('');
       fetchDevices();
     } catch (err) { console.error(err); }
