@@ -15,7 +15,7 @@ const HealthRecords = () => {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/get-data?user_id=${user.id}`);
+      const res = await axios.get(`http://localhost:5000/get-data?user_id=${user.id}`);
       setData(res.data.reverse()); // Reverse for chronological chart
     } catch (err) { console.error(err); }
   };

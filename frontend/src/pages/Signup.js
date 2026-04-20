@@ -14,12 +14,16 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Submitting signup...', formData);
     try {
-      await axios.post('http://127.0.0.1:5000/signup', formData);
+      const res = await axios.post('http://localhost:5000/signup', formData);
+      console.log('Signup response:', res.data);
       alert('Signup successful! Please login.');
       navigate('/login');
     } catch (err) {
-      alert('Signup failed');
+      console.error('Signup error:', err);
+      const message = err.response?.data?.error || 'Signup failed. Please try again.';
+      alert(message);
     }
   };
 
@@ -53,14 +57,34 @@ const Signup = () => {
             onChange={(e) => setFormData({...formData, password: e.target.value})} 
             required 
           />
-          <select 
-            value={formData.role} 
-            onChange={(e) => setFormData({...formData, role: e.target.value})}
+          <div className="role-selector">
+            <button 
+              type="button"
+              className={`role-option ${formData.role === 'patient' ? 'active' : ''}`}
+              onClick={() => {
+                console.log('Role selected: patient');
+                setFormData({...formData, role: 'patient'});
+              }}
+            >
+              Patient
+            </button>
+            <button 
+              type="button"
+              className={`role-option ${formData.role === 'doctor' ? 'active' : ''}`}
+              onClick={() => {
+                console.log('Role selected: doctor');
+                setFormData({...formData, role: 'doctor'});
+              }}
+            >
+              Doctor
+            </button>
+          </div>
+          <button 
+            type="submit" 
+            onClick={() => console.log('Sign up button clicked')}
           >
-            <option value="patient">Patient</option>
-            <option value="doctor">Doctor</option>
-          </select>
-          <button type="submit">Sign Up</button>
+            Sign Up
+          </button>
         </form>
         <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem' }}>
           Already have an account? <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Login</Link>

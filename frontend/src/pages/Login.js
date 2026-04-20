@@ -13,11 +13,18 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://127.0.0.1:5000/login', { username, password });
-      login(res.data.user);
-      navigate(res.data.user.role === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
+      const res = await axios.post('http://localhost:5000/login', { username, password });
+      if (res.data && res.data.user) {
+        login(res.data.user);
+        navigate(res.data.user.role === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
+      } else {
+        console.error('Login response missing user data:', res.data);
+        alert('Login failed: Invalid response from server');
+      }
     } catch (err) {
-      alert('Login failed');
+      console.error('Login error:', err);
+      const message = err.response?.data?.error || 'Login failed. Please check your credentials.';
+      alert(message);
     }
   };
 

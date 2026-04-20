@@ -18,9 +18,9 @@ const DoctorDashboard = () => {
 
   const fetchPatients = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/get-patients');
+      const res = await axios.get('http://localhost:5000/get-patients');
       const patientsWithRisk = await Promise.all(res.data.map(async (p) => {
-        const riskRes = await axios.get(`http://127.0.0.1:5000/alerts?user_id=${p.id}`);
+        const riskRes = await axios.get(`http://localhost:5000/alerts?user_id=${p.id}`);
         return { ...p, risk: riskRes.data.current_risk, alerts: riskRes.data.alerts };
       }));
       setPatients(patientsWithRisk);
@@ -31,7 +31,7 @@ const DoctorDashboard = () => {
     setLoadingHistory(true);
     setSelectedPatient(patient);
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/get-data?user_id=${patient.id}`);
+      const res = await axios.get(`http://localhost:5000/get-data?user_id=${patient.id}`);
       setHistory(res.data.reverse());
     } catch (err) { console.error(err); }
     setLoadingHistory(false);

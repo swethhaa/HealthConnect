@@ -21,14 +21,14 @@ const PatientDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/get-data?user_id=${user.id}`);
+      const res = await axios.get(`http://localhost:5000/get-data?user_id=${user.id}`);
       setData(res.data);
     } catch (err) { console.error(err); }
   };
 
   const fetchAlerts = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/alerts?user_id=${user.id}`);
+      const res = await axios.get(`http://localhost:5000/alerts?user_id=${user.id}`);
       setAlerts(res.data.alerts);
       setRisk(res.data.current_risk);
     } catch (err) { console.error(err); }

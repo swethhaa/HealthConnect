@@ -118,8 +118,41 @@ body {
 
 .auth-card {
   width: 100%;
-  max-width: 260px;
-  padding: 1.5rem;
+  max-width: 350px;
+  padding: 2rem;
+}
+
+.role-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.role-option {
+  flex: 1;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+}
+
+.role-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.role-option.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 input, select, button {
@@ -138,6 +171,12 @@ input, select {
   display: block;
   font-size: 0.9rem;
   outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+input:focus {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 select {
