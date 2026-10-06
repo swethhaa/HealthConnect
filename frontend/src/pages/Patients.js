@@ -55,125 +55,175 @@ const Patients = () => {
 
   return (
     <div>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 className="gradient-text" style={{ margin: 0, fontSize: '2rem' }}>Patient Directory</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Manage and view clinical records for all registered patients</p>
+      <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
+          Assigned Patient Directory
+        </h1>
+        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          Clinical records and vital telemetry monitoring for your registered patients
+        </p>
       </header>
 
-      <div style={{ marginBottom: '2.5rem', position: 'relative' }}>
-        <Search size={20} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-muted)' }} />
+      <div style={{ marginBottom: '1.75rem', position: 'relative', maxWidth: '480px' }}>
+        <Search size={18} style={{ position: 'absolute', left: '0.875rem', top: '0.75rem', color: 'var(--text-muted)' }} />
         <input 
           type="text" 
-          placeholder="Search patients by name or ID..." 
+          placeholder="Search patients by full name or ID..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ paddingLeft: '3rem' }}
+          style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
         {filteredPatients.map((patient) => (
-          <div key={patient.id} className="glass-card" style={{ borderLeft: `4px solid ${patient.risk === 'High' ? 'var(--danger)' : patient.risk === 'Medium' ? 'var(--warning)' : 'var(--primary)'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div key={patient.id} className="card" style={{ 
+            borderLeft: `4px solid ${patient.risk === 'High' ? 'var(--danger)' : patient.risk === 'Medium' ? 'var(--warning)' : 'var(--success)'}` 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--primary-subtle)', border: '1px solid var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <User size={20} color="var(--primary)" />
                 </div>
                 <div>
-                  <h4 style={{ margin: 0 }}>{patient.full_name}</h4>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {patient.id.slice(0,8)}</p>
+                  <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)' }}>{patient.full_name}</h4>
+                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {patient.id.slice(0,8)}</p>
                 </div>
               </div>
-              <span className={`risk-${patient.risk}`} style={{ fontWeight: 700, fontSize: '0.875rem' }}>{patient.risk}</span>
+              <span className={`risk-${patient.risk}`} style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                {patient.risk.toUpperCase()}
+              </span>
             </div>
 
             {patient.alerts.length > 0 && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', padding: '0.65rem 0.85rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
                 {patient.alerts.map((a, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: '0.75rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <AlertTriangle size={12} /> {a}
+                  <p key={i} style={{ margin: 0, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <AlertTriangle size={14} /> {a}
                   </p>
                 ))}
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
               <button 
                 onClick={() => fetchHistory(patient)}
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.875rem', width: '100%' }}
+                style={{ 
+                  background: 'var(--bg-body)', 
+                  color: 'var(--text-main)', 
+                  border: '1px solid var(--border)', 
+                  fontSize: '0.85rem', 
+                  width: '100%',
+                  fontWeight: 600 
+                }}
               >
                 View History
               </button>
               <button 
                 onClick={() => generateReport(patient)}
-                style={{ background: 'var(--primary)', color: '#fff', fontSize: '0.875rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                style={{ 
+                  background: 'var(--primary)', 
+                  color: '#ffffff', 
+                  fontSize: '0.85rem', 
+                  width: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '0.4rem',
+                  fontWeight: 600 
+                }}
               >
                 <FileText size={16} />
-                View Report
+                Generate Report
               </button>
             </div>
           </div>
         ))}
+
         {filteredPatients.length === 0 && (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                <p style={{ fontSize: '1rem', marginBottom: '1rem' }}>No assigned patients found.</p>
-                <p style={{ fontSize: '0.875rem' }}>Go to "Add Patients" to assign patients to your care.</p>
-            </div>
+          <div className="card" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>No assigned patients found.</p>
+            <p style={{ fontSize: '0.875rem', margin: 0 }}>Navigate to "Assign Patients" to map unassigned patients to your roster.</p>
+          </div>
         )}
       </div>
 
       {selectedPatient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '950px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          background: 'rgba(15, 23, 42, 0.6)', 
+          backdropFilter: 'blur(2px)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 1000, 
+          padding: '1.5rem' 
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '950px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '2rem' }}>
             <button 
               onClick={() => setSelectedPatient(null)}
-              style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', width: 'auto', background: 'transparent', color: 'var(--text-muted)' }}
+              style={{ 
+                position: 'absolute', 
+                right: '1.25rem', 
+                top: '1.25rem', 
+                width: 'auto', 
+                background: 'var(--bg-body)', 
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+                padding: '0.4rem',
+                borderRadius: '0.375rem'
+              }}
             >
-              <X size={24} />
+              <X size={20} />
             </button>
             
-            <h2 className="gradient-text">{selectedPatient.full_name}'s Full Clinical History</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Patient ID: {selectedPatient.id}</p>
+            <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', color: 'var(--text-main)' }}>
+              {selectedPatient.full_name} &mdash; Full Clinical History
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Patient ID: {selectedPatient.id}
+            </p>
 
             {loadingHistory ? (
-              <p>Loading records...</p>
+              <p style={{ color: 'var(--text-muted)' }}>Loading records...</p>
             ) : (
               <>
-                <div style={{ height: '300px', marginBottom: '2.5rem' }}>
+                <div style={{ height: '280px', marginBottom: '2rem', padding: '1rem 0', background: 'var(--bg-body)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={history}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="timestamp" tick={{fill: '#a7f3d0', fontSize: 10}} tickFormatter={(t) => new Date(t).toLocaleTimeString()} />
-                      <YAxis tick={{fill: '#a7f3d0'}} />
-                      <Tooltip contentStyle={{ background: '#064e3b', border: '1px solid var(--glass-border)', borderRadius: '1rem' }} />
-                      <Line type="monotone" dataKey="heart_rate" stroke="#ef4444" name="HR" dot={false} strokeWidth={2} />
-                      <Line type="monotone" dataKey="spo2" stroke="#3b82f6" name="SpO2" dot={false} strokeWidth={2} />
-                      <Line type="monotone" dataKey="temperature" stroke="#f59e0b" name="Temp" dot={false} strokeWidth={2} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="timestamp" tick={{fill: '#64748b', fontSize: 11}} tickFormatter={(t) => new Date(t).toLocaleTimeString()} />
+                      <YAxis tick={{fill: '#64748b', fontSize: 11}} />
+                      <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.5rem', color: '#0f172a', fontSize: '0.85rem' }} />
+                      <Line type="monotone" dataKey="heart_rate" stroke="#dc2626" name="Heart Rate (BPM)" dot={false} strokeWidth={2} />
+                      <Line type="monotone" dataKey="spo2" stroke="#0284c7" name="SpO2 (%)" dot={false} strokeWidth={2} />
+                      <Line type="monotone" dataKey="temperature" stroke="#d97706" name="Temp (°C)" dot={false} strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
 
-                <div className="glass-card" style={{ padding: 0, overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table>
                     <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Date & Time</th>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>HR (BPM)</th>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>SpO2 (%)</th>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Temp (°C)</th>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>BP (mmHg)</th>
-                        <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Risk Level</th>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Date & Time</th>
+                        <th style={{ textAlign: 'left' }}>Heart Rate (BPM)</th>
+                        <th style={{ textAlign: 'left' }}>SpO2 (%)</th>
+                        <th style={{ textAlign: 'left' }}>Temp (°C)</th>
+                        <th style={{ textAlign: 'left' }}>BP (mmHg)</th>
+                        <th style={{ textAlign: 'left' }}>Risk Level</th>
                       </tr>
                     </thead>
                     <tbody>
                       {history.slice().reverse().map((d, i) => (
-                        <tr key={i} style={{ borderTop: '1px solid var(--glass-border)' }}>
-                          <td style={{ padding: '0.875rem 1rem', fontSize: '0.8rem' }}>{new Date(d.timestamp).toLocaleString()}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>{d.heart_rate}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>{d.spo2}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>{d.temperature}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>{d.systolic}/{d.diastolic}</td>
-                          <td style={{ padding: '0.875rem 1rem' }} className={`risk-${d.risk_level}`}>{d.risk_level}</td>
+                        <tr key={i}>
+                          <td>{new Date(d.timestamp).toLocaleString()}</td>
+                          <td style={{ fontWeight: 600 }}>{d.heart_rate}</td>
+                          <td style={{ fontWeight: 600 }}>{d.spo2}</td>
+                          <td style={{ fontWeight: 600 }}>{d.temperature}</td>
+                          <td style={{ fontWeight: 600 }}>{d.systolic}/{d.diastolic}</td>
+                          <td className={`risk-${d.risk_level}`}>{d.risk_level}</td>
                         </tr>
                       ))}
                     </tbody>

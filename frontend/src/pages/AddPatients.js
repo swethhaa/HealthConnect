@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
-import { Plus, Check, Loader } from 'lucide-react';
+import { Plus, Check, Loader, UserCheck, UserPlus } from 'lucide-react';
 
 const AddPatients = () => {
   const { user } = useUser();
@@ -42,7 +42,7 @@ const AddPatients = () => {
         doctor_id: user.id,
         patient_id: patientId
       });
-      setMessage('Patient added successfully!');
+      setMessage('Patient assigned successfully!');
       setTimeout(() => setMessage(''), 3000);
       
       // Refresh lists
@@ -57,43 +57,53 @@ const AddPatients = () => {
 
   return (
     <div>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 className="gradient-text" style={{ margin: 0, fontSize: '2rem' }}>Manage Patients</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Add and manage your patient list</p>
+      <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
+          Patient Assignment & Management
+        </h1>
+        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          Assign unallocated patients to your active clinical roster
+        </p>
       </header>
 
       {message && (
-        <div className="glass-card" style={{ 
+        <div className="card" style={{ 
           marginBottom: '1.5rem', 
-          padding: '1rem', 
-          background: message.includes('successfully') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-          borderLeft: `4px solid ${message.includes('successfully') ? '#10b981' : '#ef4444'}`
+          padding: '0.875rem 1.25rem', 
+          background: message.includes('successfully') ? 'var(--success-light)' : 'var(--danger-light)',
+          borderLeft: `4px solid ${message.includes('successfully') ? 'var(--success)' : 'var(--danger)'}`
         }}>
-          <p style={{ margin: 0, color: message.includes('successfully') ? '#10b981' : '#fca5a5' }}>
+          <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: message.includes('successfully') ? 'var(--success)' : 'var(--danger)' }}>
             {message}
           </p>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem' }}>
         {/* Available Patients */}
         <div>
-          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Available Patients</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <UserPlus size={20} color="var(--primary)" />
+            <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-main)', fontWeight: 700 }}>
+              Unassigned Patients
+            </h2>
+          </div>
+
           {availablePatients.length === 0 ? (
-            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>All patients are already assigned</p>
+            <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>All registered patients are currently assigned to doctors.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               {availablePatients.map((patient) => (
-                <div key={patient.id} className="glass-card" style={{ 
+                <div key={patient.id} className="card" style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  padding: '1.25rem'
+                  padding: '1rem 1.25rem'
                 }}>
                   <div>
-                    <h4 style={{ margin: '0 0 0.25rem 0' }}>{patient.full_name}</h4>
+                    <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '0.95rem', color: 'var(--text-main)' }}>{patient.full_name}</h4>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       ID: {patient.id.slice(0, 8)}
                     </p>
@@ -102,27 +112,29 @@ const AddPatients = () => {
                     onClick={() => addPatientToDoctor(patient.id)}
                     disabled={addingPatientId === patient.id}
                     style={{
-                      background: addingPatientId === patient.id ? 'var(--primary-dark)' : 'var(--primary)',
+                      background: addingPatientId === patient.id ? 'var(--primary-hover)' : 'var(--primary)',
                       border: 'none',
                       color: 'white',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '0.5rem',
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '0.375rem',
                       cursor: addingPatientId === patient.id ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      fontSize: '0.875rem'
+                      gap: '0.4rem',
+                      fontSize: '0.85rem',
+                      width: 'auto',
+                      fontWeight: 600
                     }}
                   >
                     {addingPatientId === patient.id ? (
                       <>
-                        <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                        Adding...
+                        <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                        Assigning...
                       </>
                     ) : (
                       <>
-                        <Plus size={16} />
-                        Add
+                        <Plus size={15} />
+                        Assign
                       </>
                     )}
                   </button>
@@ -134,28 +146,44 @@ const AddPatients = () => {
 
         {/* Assigned Patients */}
         <div>
-          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>My Patients</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <UserCheck size={20} color="var(--teal)" />
+            <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-main)', fontWeight: 700 }}>
+              My Roster Patients
+            </h2>
+          </div>
+
           {assignedPatients.length === 0 ? (
-            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>No patients assigned yet</p>
+            <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>No patients assigned to your clinical roster yet.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               {assignedPatients.map((patient) => (
-                <div key={patient.id} className="glass-card" style={{ 
+                <div key={patient.id} className="card" style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  padding: '1.25rem',
-                  borderLeft: '4px solid var(--accent)'
+                  padding: '1rem 1.25rem',
+                  borderLeft: '4px solid var(--teal)'
                 }}>
                   <div>
-                    <h4 style={{ margin: '0 0 0.25rem 0' }}>{patient.full_name}</h4>
+                    <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '0.95rem', color: 'var(--text-main)' }}>{patient.full_name}</h4>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Assigned: {new Date(patient.assigned_date).toLocaleDateString()}
+                      Assigned Date: {new Date(patient.assigned_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <Check size={20} style={{ color: 'var(--accent)' }} />
+                  <div style={{ 
+                    width: '28px', 
+                    height: '28px', 
+                    borderRadius: '50%', 
+                    background: 'var(--teal-light)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <Check size={16} color="var(--teal)" />
+                  </div>
                 </div>
               ))}
             </div>

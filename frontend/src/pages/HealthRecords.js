@@ -22,71 +22,101 @@ const HealthRecords = () => {
 
   return (
     <div>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 className="gradient-text" style={{ margin: 0 }}>Health Records</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Historical analysis of your vitals</p>
+          <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
+            Health Records & Telemetry History
+          </h1>
+          <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Historical longitudinal review of vital sign parameters
+          </p>
         </div>
-        <div className="glass-card" style={{ padding: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+        
+        {/* Toggle Switcher */}
+        <div style={{ background: 'var(--border-subtle)', padding: '0.25rem', borderRadius: '0.5rem', display: 'flex', gap: '0.25rem', border: '1px solid var(--border)' }}>
           <button 
             onClick={() => setView('chart')} 
             style={{ 
-              background: view === 'chart' ? 'var(--primary)' : 'transparent',
-              padding: '0.5rem 1rem', width: 'auto'
+              background: view === 'chart' ? 'var(--bg-surface)' : 'transparent',
+              color: view === 'chart' ? 'var(--primary)' : 'var(--text-muted)',
+              border: view === 'chart' ? '1px solid var(--border)' : 'none',
+              padding: '0.4rem 0.85rem', 
+              width: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              boxShadow: view === 'chart' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
             }}
           >
-            <BarChart2 size={18} />
+            <BarChart2 size={16} /> Graphical View
           </button>
           <button 
             onClick={() => setView('table')} 
             style={{ 
-              background: view === 'table' ? 'var(--primary)' : 'transparent',
-              padding: '0.5rem 1rem', width: 'auto'
+              background: view === 'table' ? 'var(--bg-surface)' : 'transparent',
+              color: view === 'table' ? 'var(--primary)' : 'var(--text-muted)',
+              border: view === 'table' ? '1px solid var(--border)' : 'none',
+              padding: '0.4rem 0.85rem', 
+              width: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              boxShadow: view === 'table' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
             }}
           >
-            <Table size={18} />
+            <Table size={16} /> Data Log Table
           </button>
         </div>
       </header>
 
       {view === 'chart' ? (
-        <div className="glass-card" style={{ height: '500px', padding: '2rem' }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="card" style={{ height: '480px', padding: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', color: 'var(--text-main)', fontWeight: 600 }}>
+            Vital Signs Telemetry Timeline
+          </h3>
+          <ResponsiveContainer width="100%" height="90%">
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="timestamp" tick={{fill: '#a7f3d0', fontSize: 10}} tickFormatter={(t) => new Date(t).toLocaleTimeString()} />
-              <YAxis tick={{fill: '#a7f3d0'}} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="timestamp" tick={{fill: '#64748b', fontSize: 11}} tickFormatter={(t) => new Date(t).toLocaleTimeString()} />
+              <YAxis tick={{fill: '#64748b', fontSize: 11}} />
               <Tooltip 
-                contentStyle={{ background: '#064e3b', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}
-                itemStyle={{ color: '#fff' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.5rem', color: '#0f172a', fontSize: '0.85rem' }}
               />
-              <Legend />
-              <Line type="monotone" dataKey="heart_rate" stroke="#ef4444" name="HR" dot={false} strokeWidth={2} />
-              <Line type="monotone" dataKey="spo2" stroke="#3b82f6" name="SpO2" dot={false} strokeWidth={2} />
-              <Line type="monotone" dataKey="temperature" stroke="#f59e0b" name="Temp" dot={false} strokeWidth={2} />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Line type="monotone" dataKey="heart_rate" stroke="#dc2626" name="Heart Rate (BPM)" dot={false} strokeWidth={2} />
+              <Line type="monotone" dataKey="spo2" stroke="#0284c7" name="Blood Oxygen SpO2 (%)" dot={false} strokeWidth={2} />
+              <Line type="monotone" dataKey="temperature" stroke="#d97706" name="Temperature (°C)" dot={false} strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="glass-card" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+          <table>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)' }}>Timestamp</th>
-                <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)' }}>Heart Rate</th>
-                <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)' }}>SpO2</th>
-                <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)' }}>Temp</th>
-                <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)' }}>Risk</th>
+                <th style={{ textAlign: 'left' }}>Timestamp</th>
+                <th style={{ textAlign: 'left' }}>Heart Rate</th>
+                <th style={{ textAlign: 'left' }}>Blood Oxygen (SpO2)</th>
+                <th style={{ textAlign: 'left' }}>Body Temp</th>
+                <th style={{ textAlign: 'left' }}>Blood Pressure</th>
+                <th style={{ textAlign: 'left' }}>Glucose</th>
+                <th style={{ textAlign: 'left' }}>Triage Risk Level</th>
               </tr>
             </thead>
             <tbody>
               {data.slice().reverse().map((d, i) => (
-                <tr key={i} style={{ borderTop: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '1rem' }}>{new Date(d.timestamp).toLocaleString()}</td>
-                  <td style={{ padding: '1rem' }}>{d.heart_rate} BPM</td>
-                  <td style={{ padding: '1rem' }}>{d.spo2}%</td>
-                  <td style={{ padding: '1rem' }}>{d.temperature}°C</td>
-                  <td style={{ padding: '1rem' }} className={`risk-${d.risk_level}`}>{d.risk_level}</td>
+                <tr key={i}>
+                  <td>{new Date(d.timestamp).toLocaleString()}</td>
+                  <td style={{ fontWeight: 600 }}>{d.heart_rate} BPM</td>
+                  <td style={{ fontWeight: 600 }}>{d.spo2}%</td>
+                  <td style={{ fontWeight: 600 }}>{d.temperature}°C</td>
+                  <td style={{ fontWeight: 600 }}>{d.systolic ? `${d.systolic}/${d.diastolic}` : '--'} mmHg</td>
+                  <td style={{ fontWeight: 600 }}>{d.glucose || '--'} mg/dL</td>
+                  <td className={`risk-${d.risk_level}`}>{d.risk_level}</td>
                 </tr>
               ))}
             </tbody>

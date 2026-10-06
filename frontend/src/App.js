@@ -11,6 +11,7 @@ import HealthRecords from './pages/HealthRecords';
 import DeviceManagement from './pages/DeviceManagement';
 import AddPatients from './pages/AddPatients';
 import ReportGeneration from './pages/ReportGeneration';
+import { CheckCircle2 } from 'lucide-react';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useUser();
@@ -71,9 +72,26 @@ function App() {
 
           <Route path="/alerts" element={
             <ProtectedRoute>
-              <div className="glass-card">
-                <h2 className="gradient-text">Alerts & Notifications</h2>
-                <p>No new system alerts.</p>
+              <div>
+                <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                  <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                    System Alerts & Notifications
+                  </h1>
+                  <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    Centralized notification feed for critical vital events
+                  </p>
+                </header>
+                <div className="card" style={{ padding: '3.5rem 2rem', textAlign: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--success-light)', border: '1px solid var(--success-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                    <CheckCircle2 size={24} color="var(--success)" />
+                  </div>
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                    No Broadcast System Alerts
+                  </h3>
+                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    All patient telemetry streams are being monitored normally. Individual patient alerts will appear on your dashboard.
+                  </p>
+                </div>
               </div>
             </ProtectedRoute>
           } />

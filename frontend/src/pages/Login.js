@@ -30,32 +30,74 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      <div className="glass-card auth-card">
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <Activity size={32} color="var(--primary)" style={{ margin: '0 auto 0.75rem' }} />
-          <h2 className="gradient-text">Welcome Back</h2>
-          <p style={{ color: 'var(--text-muted)' }}>Health Monitoring System</p>
+      <div className="auth-card">
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            background: 'var(--primary-subtle)', 
+            border: '1px solid var(--primary-light)',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            margin: '0 auto 1rem'
+          }}>
+            <Activity size={26} color="var(--primary)" />
+          </div>
+          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: 'var(--text-main)', fontWeight: 700 }}>
+            HealthConnect Portal
+          </h2>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Rural Health Monitoring System
+          </p>
         </div>
+
         <form onSubmit={handleSubmit}>
-          <input 
-            type="text" 
-            placeholder="Username" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            required 
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-          <button type="submit">Login</button>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+              Username
+            </label>
+            <input 
+              type="text" 
+              placeholder="Enter your username" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+              Password
+            </label>
+            <input 
+              type="password" 
+              placeholder="Enter your password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <button type="submit" style={{ width: '100%', padding: '0.75rem' }}>
+            Sign In
+          </button>
         </form>
-        <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem' }}>
-          Don't have an account? <Link to="/signup" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Sign Up</Link>
-        </p>
+
+        <div style={{ 
+          textAlign: 'center', 
+          marginTop: '1.5rem', 
+          paddingTop: '1.25rem', 
+          borderTop: '1px solid var(--border-subtle)',
+          fontSize: '0.875rem',
+          color: 'var(--text-muted)'
+        }}>
+          Don't have an account?{' '}
+          <Link to="/signup" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+            Register here
+          </Link>
+        </div>
       </div>
     </div>
   );

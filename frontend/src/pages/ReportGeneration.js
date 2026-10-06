@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 import { Download, FileText, Globe } from 'lucide-react';
@@ -26,7 +26,6 @@ const ReportGeneration = () => {
   const downloadPDF = () => {
     if (!report) return;
     
-    // Create a simple PDF content (you can use a library like jsPDF for better formatting)
     const content = `
 ${report.title}
 ${'='.repeat(40)}
@@ -41,7 +40,7 @@ ${Object.entries(report.latest_reading).map(([key, value]) => `${key}: ${value}`
 ${report.language === 'Tamil' ? '7 நாள் சராசரி' : '7-Day Average'}:
 ${Object.entries(report.average_7_days).map(([key, value]) => `${key}: ${value}`).join('\n')}
 
-${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் நிலை' : 'Current Risk Level'}: ${report.risk_level}
+${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து நிலை' : 'Current Risk Level'}: ${report.risk_level}
     `;
 
     const element = document.createElement('a');
@@ -53,28 +52,34 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
     document.body.removeChild(element);
   };
 
+  const getRiskStyle = (level) => {
+    if (level === 'High') return { bg: 'var(--danger-light)', border: 'var(--danger-border)', color: 'var(--danger)' };
+    if (level === 'Medium') return { bg: 'var(--warning-light)', border: 'var(--warning-border)', color: 'var(--warning)' };
+    return { bg: 'var(--success-light)', border: 'var(--success-border)', color: 'var(--success)' };
+  };
+
   return (
     <div>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 className="gradient-text" style={{ margin: 0, fontSize: '2rem' }}>
-          {language === 'Tamil' ? 'சுகாதார அறிக்கை' : 'Health Report'}
+      <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
+          {language === 'Tamil' ? 'சுகாதார அறிக்கை' : 'Clinical Health Summary Report'}
         </h1>
-        <p style={{ color: 'var(--text-muted)' }}>
-          {language === 'Tamil' ? 'உங்கள் சுகாதார பதிவு உருவாக்கவும் மற்றும் பதிவிறக்கவும்' : 'Generate and download your health report'}
+        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          {language === 'Tamil' ? 'உங்கள் சுகாதார அறிக்கை உருவாக்கவும் மற்றும் பதிவிறக்கவும்' : 'Generate structured clinical summaries for medical records'}
         </p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', alignItems: 'start' }}>
-        {/* Controls */}
-        <div className="glass-card">
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.125rem' }}>
-            {language === 'Tamil' ? 'அறிக்கை அமைப்புகள்' : 'Report Settings'}
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.75rem', alignItems: 'start' }}>
+        {/* Controls Panel */}
+        <div className="card">
+          <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.05rem', color: 'var(--text-main)', fontWeight: 600 }}>
+            {language === 'Tamil' ? 'அறிக்கை அமைப்புகள்' : 'Report Configuration'}
           </h3>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-              <Globe size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-              {language === 'Tamil' ? 'மொழி' : 'Language'}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <Globe size={15} color="var(--primary)" />
+              {language === 'Tamil' ? 'மொழி' : 'Document Language'}
             </label>
             <select
               value={language}
@@ -84,13 +89,14 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
               }}
               style={{
                 width: '100%',
-                padding: '0.75rem',
+                padding: '0.65rem 0.85rem',
                 borderRadius: '0.5rem',
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(0,0,0,0.3)',
-                color: 'white',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-main)',
                 cursor: 'pointer',
-                fontSize: '1rem'
+                fontSize: '0.9rem',
+                marginBottom: 0
               }}
             >
               <option value="English">English</option>
@@ -103,24 +109,24 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
             disabled={loading}
             style={{
               width: '100%',
-              padding: '0.75rem 1rem',
-              background: loading ? 'var(--primary-dark)' : 'var(--primary)',
+              padding: '0.7rem 1rem',
+              background: loading ? 'var(--primary-hover)' : 'var(--primary)',
               border: 'none',
               borderRadius: '0.5rem',
               color: 'white',
               cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '1rem',
-              fontWeight: 500,
+              fontSize: '0.9rem',
+              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem'
+              gap: '0.4rem'
             }}
           >
-            <FileText size={18} />
+            <FileText size={17} />
             {loading 
-              ? (language === 'Tamil' ? 'உருவாக்குகிறது...' : 'Generating...')
-              : (language === 'Tamil' ? 'அறிக்கை உருவாக்கவும்' : 'Generate Report')
+              ? (language === 'Tamil' ? 'உருவாக்குகிறது...' : 'Generating Report...')
+              : (language === 'Tamil' ? 'அறிக்கை உருவாக்கவும்' : 'Generate Summary')
             }
           </button>
 
@@ -130,22 +136,22 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
               style={{
                 width: '100%',
                 marginTop: '0.75rem',
-                padding: '0.75rem 1rem',
-                background: 'var(--accent)',
+                padding: '0.7rem 1rem',
+                background: 'var(--teal)',
                 border: 'none',
                 borderRadius: '0.5rem',
                 color: 'white',
                 cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: 500,
+                fontSize: '0.9rem',
+                fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.5rem'
+                gap: '0.4rem'
               }}
             >
-              <Download size={18} />
-              {language === 'Tamil' ? 'பதிவிறக்கவும்' : 'Download'}
+              <Download size={17} />
+              {language === 'Tamil' ? 'பதிவிறக்கவும்' : 'Download Document'}
             </button>
           )}
 
@@ -153,88 +159,99 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
             <div style={{
               marginTop: '1rem',
               padding: '0.75rem',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: 'var(--danger-light)',
+              border: '1px solid var(--danger-border)',
               borderRadius: '0.5rem',
-              color: '#fca5a5'
+              color: 'var(--danger)',
+              fontSize: '0.85rem'
             }}>
               {error}
             </div>
           )}
         </div>
 
-        {/* Report Display */}
+        {/* Report Display Document View */}
         <div>
           {report ? (
-            <div className="glass-card">
-              <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', textAlign: 'center' }}>
-                {report.title}
-              </h2>
+            <div className="card" style={{ padding: '2.25rem', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '1rem', marginBottom: '1.75rem' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 700 }}>
+                    {report.title}
+                  </h2>
+                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Rural Healthcare Portal &bull; Medical Records Output
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <strong>{language === 'Tamil' ? 'தேதி' : 'Date'}:</strong> {report.report_date}
+                </div>
+              </div>
 
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gap: '1.5rem',
-                marginBottom: '2rem',
-                paddingBottom: '2rem',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                marginBottom: '1.75rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid var(--border-subtle)'
               }}>
                 <div>
-                  <h4 style={{ margin: '0 0 1rem 0', opacity: 0.7 }}>
-                    {language === 'Tamil' ? 'நோயாளி தகவல்' : 'Patient Information'}
+                  <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    {language === 'Tamil' ? 'நோயாளி தகவல்' : 'Patient Demographic Info'}
                   </h4>
-                  <p style={{ margin: '0.5rem 0' }}>
-                    <strong>{language === 'Tamil' ? 'பெயர்' : 'Name'}:</strong> {report.patient.name}
+                  <p style={{ margin: '0.35rem 0', fontSize: '0.9rem' }}>
+                    <strong style={{ color: 'var(--text-secondary)' }}>{language === 'Tamil' ? 'பெயர்' : 'Patient Name'}:</strong> {report.patient.name}
                   </p>
-                  <p style={{ margin: '0.5rem 0' }}>
-                    <strong>{language === 'Tamil' ? 'ID' : 'ID'}:</strong> {report.patient.id.slice(0, 8)}...
-                  </p>
-                  <p style={{ margin: '0.5rem 0' }}>
-                    <strong>{language === 'Tamil' ? 'தேதி' : 'Date'}:</strong> {report.report_date}
+                  <p style={{ margin: '0.35rem 0', fontSize: '0.9rem' }}>
+                    <strong style={{ color: 'var(--text-secondary)' }}>{language === 'Tamil' ? 'ID' : 'Patient ID'}:</strong> {report.patient.id.slice(0, 8)}...
                   </p>
                 </div>
+                
                 <div>
-                  <h4 style={{ margin: '0 0 1rem 0', opacity: 0.7 }}>
-                    {language === 'Tamil' ? '஝ுக்கம் நிலை' : 'Risk Assessment'}
+                  <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    {language === 'Tamil' ? 'ஆபத்து நிலை' : 'Current Risk Status'}
                   </h4>
-                  <div style={{
-                    padding: '1rem',
-                    background: `rgba(${report.risk_level === 'High' ? '239, 68, 68' : report.risk_level === 'Medium' ? '245, 158, 11' : '16, 185, 129'}, 0.1)`,
-                    borderRadius: '0.5rem',
-                    borderLeft: `4px solid ${report.risk_level === 'High' ? '#ef4444' : report.risk_level === 'Medium' ? '#f59e0b' : '#10b981'}`
-                  }}>
-                    <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.7 }}>
-                      {language === 'Tamil' ? 'தற்போதைய நிலை' : 'Current Status'}
-                    </p>
-                    <p style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      color: report.risk_level === 'High' ? '#ef4444' : report.risk_level === 'Medium' ? '#f59e0b' : '#10b981'
-                    }}>
-                      {report.risk_level}
-                    </p>
-                  </div>
+                  {(() => {
+                    const style = getRiskStyle(report.risk_level);
+                    return (
+                      <div style={{
+                        padding: '0.85rem 1rem',
+                        background: style.bg,
+                        borderRadius: '0.5rem',
+                        borderLeft: `4px solid ${style.color}`,
+                        border: `1px solid ${style.border}`
+                      }}>
+                        <p style={{ margin: 0, fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          {language === 'Tamil' ? 'தற்போதைய நிலை' : 'Classification'}
+                        </p>
+                        <p style={{ margin: '0.15rem 0 0 0', fontSize: '1.25rem', fontWeight: 700, color: style.color }}>
+                          {report.risk_level} Risk
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
               {/* Latest Reading */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', opacity: 0.9 }}>
-                  {language === 'Tamil' ? 'சமீபத்திய வாசிப்பு' : 'Latest Reading'}
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h3 style={{ marginBottom: '0.85rem', fontSize: '1.05rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                  {language === 'Tamil' ? 'சமீபத்திய வாசிப்பு' : 'Most Recent Vital Telemetry'}
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.875rem' }}>
                   {Object.entries(report.latest_reading).map(([key, value]) => (
                     <div key={key} style={{
-                      padding: '1rem',
-                      background: 'rgba(255,255,255,0.03)',
+                      padding: '0.85rem 1rem',
+                      background: 'var(--primary-subtle)',
                       borderRadius: '0.5rem',
+                      border: '1px solid var(--primary-light)',
                       borderLeft: '3px solid var(--primary)'
                     }}>
-                      <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.7, marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                         {key}
                       </p>
-                      <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>
+                      <p style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         {value}
                       </p>
                     </div>
@@ -244,21 +261,22 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
 
               {/* 7-Day Average */}
               <div>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', opacity: 0.9 }}>
-                  {language === 'Tamil' ? '7 நாள் சராசரி' : '7-Day Average'}
+                <h3 style={{ marginBottom: '0.85rem', fontSize: '1.05rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                  {language === 'Tamil' ? '7 நாள் சராசரி' : '7-Day Longitudinal Averages'}
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.875rem' }}>
                   {Object.entries(report.average_7_days).map(([key, value]) => (
                     <div key={key} style={{
-                      padding: '1rem',
-                      background: 'rgba(255,255,255,0.03)',
+                      padding: '0.85rem 1rem',
+                      background: 'var(--teal-light)',
                       borderRadius: '0.5rem',
-                      borderLeft: '3px solid var(--accent)'
+                      border: '1px solid rgba(13, 148, 136, 0.2)',
+                      borderLeft: '3px solid var(--teal)'
                     }}>
-                      <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.7, marginBottom: '0.5rem' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.75rem', color: 'var(--teal-hover)', fontWeight: 600 }}>
                         {key}
                       </p>
-                      <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>
+                      <p style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>
                         {value}
                       </p>
                     </div>
@@ -267,10 +285,13 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஝ுக்கம் 
               </div>
             </div>
           ) : (
-            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-              <FileText size={48} style={{ opacity: 0.5, marginBottom: '1rem', margin: '0 auto 1rem' }} />
-              <p style={{ color: 'var(--text-muted)', marginBottom: 0 }}>
-                {language === 'Tamil' ? 'உங்கள் அறிக்கை இங்கே தோன்றும்' : 'Your report will appear here'}
+            <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <FileText size={44} style={{ color: 'var(--primary)', opacity: 0.4, marginBottom: '0.75rem', margin: '0 auto 0.75rem' }} />
+              <p style={{ color: 'var(--text-main)', fontWeight: 600, fontSize: '1rem', margin: '0 0 0.35rem 0' }}>
+                {language === 'Tamil' ? 'அறிக்கை தயாராக இல்லை' : 'No Report Generated Yet'}
+              </p>
+              <p style={{ fontSize: '0.875rem', margin: 0 }}>
+                {language === 'Tamil' ? 'அறிக்கை உருவாக்க "அறிக்கை உருவாக்கவும்" பொத்தானைக் கிளிக் செய்க.' : 'Select your desired language and click "Generate Summary" to view the report preview.'}
               </p>
             </div>
           )}
