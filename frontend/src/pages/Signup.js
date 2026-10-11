@@ -11,45 +11,48 @@ const Signup = () => {
     role: 'patient'
   });
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting signup...', formData);
+    setLoading(true);
     try {
       setError(null);
-      const res = await axios.post('http://127.0.0.1:5001/signup', formData);
-      console.log('Signup response:', res.data);
+      await axios.post('http://127.0.0.1:5001/signup', formData);
       alert('Account created successfully! Please sign in.');
       navigate('/login');
     } catch (err) {
       console.error('Signup error:', err);
       const message = err.response?.data?.error || err.message || 'Registration failed. Please try again.';
       setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        {/* Brand Header */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '12px', 
-            background: 'var(--primary-subtle)', 
-            border: '1px solid var(--primary-light)',
+            width: '44px', 
+            height: '44px', 
+            borderRadius: '10px', 
+            background: 'var(--primary-light)', 
+            border: '1px solid var(--border)',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            margin: '0 auto 1rem'
+            margin: '0 auto 0.85rem'
           }}>
-            <Activity size={26} color="var(--primary)" />
+            <Activity size={24} color="var(--primary-deep)" />
           </div>
-          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: 'var(--text-main)', fontWeight: 700 }}>
+          <h1 style={{ margin: '0 0 0.35rem 0', fontSize: '1.45rem', fontWeight: 700, color: 'var(--text-main)' }}>
             Create Account
-          </h2>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             Rural Health Monitoring Network
           </p>
         </div>
@@ -58,12 +61,13 @@ const Signup = () => {
           <div style={{ 
             background: 'var(--danger-light)', 
             color: 'var(--danger)', 
-            padding: '0.75rem', 
-            borderRadius: '0.5rem', 
+            padding: '0.65rem 0.85rem', 
+            borderRadius: '6px', 
             marginBottom: '1.25rem', 
-            fontSize: '0.875rem', 
+            fontSize: '0.85rem', 
             textAlign: 'center', 
-            border: '1px solid var(--danger-border)' 
+            border: '1px solid var(--danger-border)',
+            fontWeight: 500
           }}>
             {error}
           </div>
@@ -71,12 +75,12 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
               Full Name
             </label>
             <input 
               type="text" 
-              placeholder="e.g. Raj Kumar" 
+              placeholder="e.g. Dr. John Smith or Raj Kumar" 
               value={formData.full_name} 
               onChange={(e) => setFormData({...formData, full_name: e.target.value})} 
               required 
@@ -84,7 +88,7 @@ const Signup = () => {
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
               Username
             </label>
             <input 
@@ -97,7 +101,7 @@ const Signup = () => {
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
               Password
             </label>
             <input 
@@ -109,30 +113,62 @@ const Signup = () => {
             />
           </div>
 
+          {/* Account Role Selector */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
               Account Type
             </label>
-            <div className="role-selector">
+            <div style={{ 
+              display: 'flex', 
+              background: 'var(--primary-subtle)', 
+              padding: '0.25rem', 
+              borderRadius: '6px',
+              border: '1px solid var(--border)' 
+            }}>
               <button 
                 type="button"
-                className={`role-option ${formData.role === 'patient' ? 'active' : ''}`}
                 onClick={() => setFormData({...formData, role: 'patient'})}
+                style={{ 
+                  flex: 1,
+                  padding: '0.5rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  background: formData.role === 'patient' ? '#FFFFFF' : 'transparent',
+                  color: formData.role === 'patient' ? 'var(--primary-deep)' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  boxShadow: formData.role === 'patient' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                }}
               >
                 Patient
               </button>
               <button 
                 type="button"
-                className={`role-option ${formData.role === 'doctor' ? 'active' : ''}`}
                 onClick={() => setFormData({...formData, role: 'doctor'})}
+                style={{ 
+                  flex: 1,
+                  padding: '0.5rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  background: formData.role === 'doctor' ? '#FFFFFF' : 'transparent',
+                  color: formData.role === 'doctor' ? 'var(--primary-deep)' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  boxShadow: formData.role === 'doctor' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                }}
               >
-                Healthcare Worker / Doctor
+                Healthcare Provider
               </button>
             </div>
           </div>
 
-          <button type="submit" style={{ width: '100%', padding: '0.75rem' }}>
-            Register Account
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="btn-primary" 
+            style={{ width: '100%', padding: '0.75rem', fontSize: '0.92rem' }}
+          >
+            {loading ? 'Registering...' : 'Register Account'}
           </button>
         </form>
 
@@ -141,11 +177,11 @@ const Signup = () => {
           marginTop: '1.5rem', 
           paddingTop: '1.25rem', 
           borderTop: '1px solid var(--border-subtle)',
-          fontSize: '0.875rem',
+          fontSize: '0.85rem',
           color: 'var(--text-muted)'
         }}>
           Already registered?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+          <Link to="/login" style={{ color: 'var(--primary-deep)', textDecoration: 'none', fontWeight: 600 }}>
             Sign In
           </Link>
         </div>

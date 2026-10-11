@@ -72,24 +72,24 @@ function App() {
 
           <Route path="/alerts" element={
             <ProtectedRoute>
-              <div>
-                <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                  <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
-                    System Alerts & Notifications
-                  </h1>
-                  <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Centralized notification feed for critical vital events
-                  </p>
-                </header>
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <div className="page-header">
+                  <div>
+                    <h1 className="page-title">System Alerts & Notifications</h1>
+                    <p className="page-subtitle">
+                      Centralized notification feed for critical vital events
+                    </p>
+                  </div>
+                </div>
                 <div className="card" style={{ padding: '3.5rem 2rem', textAlign: 'center' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--success-light)', border: '1px solid var(--success-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'var(--success-light)', border: '1px solid var(--success-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                     <CheckCircle2 size={24} color="var(--success)" />
                   </div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                  <h3 style={{ margin: '0 0 0.4rem 0', fontSize: '1.15rem', color: 'var(--text-main)', fontWeight: 600 }}>
                     No Broadcast System Alerts
                   </h3>
-                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    All patient telemetry streams are being monitored normally. Individual patient alerts will appear on your dashboard.
+                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '480px', marginInline: 'auto' }}>
+                    All patient telemetry streams are being monitored normally. Individual patient clinical alerts appear directly on your active dashboard.
                   </p>
                 </div>
               </div>

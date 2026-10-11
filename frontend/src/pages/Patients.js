@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Search, User, AlertTriangle, X, FileText } from 'lucide-react';
+import { Search, User, AlertTriangle, X, FileText, ChevronRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useUser } from '../context/UserContext';
 
@@ -13,11 +13,7 @@ const Patients = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [reportLanguage, setReportLanguage] = useState('English');
 
-  useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       const res = await axios.get(`http://localhost:5001/get-assigned-patients?doctor_id=${user.id}`);
       const patientsWithRisk = await Promise.all(res.data.map(async (p) => {
@@ -25,8 +21,14 @@ const Patients = () => {
         return { ...p, risk: riskRes.data.current_risk, alerts: riskRes.data.alerts };
       }));
       setPatients(patientsWithRisk);
-    } catch (err) { console.error(err); }
-  };
+    } catch (err) { 
+      console.error('Error fetching assigned patients:', err); 
+    }
+  }, [user.id]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
 
   const fetchHistory = async (patient) => {
     setLoadingHistory(true);
@@ -34,18 +36,21 @@ const Patients = () => {
     try {
       const res = await axios.get(`http://localhost:5001/get-data?user_id=${patient.id}`);
       setHistory(res.data.reverse());
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error('Error fetching patient clinical history:', err); 
+    }
     setLoadingHistory(false);
   };
 
   const filteredPatients = patients.filter(p => 
-    p.full_name.toLowerCase().includes(search.toLowerCase())
+    p.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    p.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const generateReport = async (patient) => {
     try {
       const res = await axios.get(`http://localhost:5001/generate-report?patient_id=${patient.id}&language=${reportLanguage}`);
-      alert(`Report generated for ${patient.full_name} in ${reportLanguage}`);
+      alert(`Report generated for ${patient.full_name} in ${reportLanguage}!`);
       console.log('Report:', res.data);
     } catch (err) {
       alert('Error generating report');
@@ -53,106 +58,168 @@ const Patients = () => {
     }
   };
 
+  const getStatusBadge = (risk) => {
+    if (risk === 'High') return { label: 'High Risk', class: 'badge-danger' };
+    if (risk === 'Medium') return { label: 'Attention', class: 'badge-warning' };
+    return { label: 'Normal', class: 'badge-success' };
+  };
+
   return (
-    <div>
-      <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--text-main)', fontWeight: 700 }}>
-          Assigned Patient Directory
-        </h1>
-        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Clinical records and vital telemetry monitoring for your registered patients
-        </p>
-      </header>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Assigned Patient Directory</h1>
+          <p className="page-subtitle">
+            Patients currently registered under your clinical surveillance
+          </p>
+        </div>
 
-      <div style={{ marginBottom: '1.75rem', position: 'relative', maxWidth: '480px' }}>
-        <Search size={18} style={{ position: 'absolute', left: '0.875rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-        <input 
-          type="text" 
-          placeholder="Search patients by full name or ID..." 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Report Language:</span>
+          <select 
+            value={reportLanguage} 
+            onChange={(e) => setReportLanguage(e.target.value)}
+            style={{ 
+              marginBottom: 0, 
+              width: 'auto',
+              padding: '0.45rem 1.6rem 0.45rem 0.75rem', 
+              fontSize: '0.82rem', 
+              fontWeight: 600,
+              background: 'var(--bg-surface)'
+            }}
+          >
+            <option value="English">English</option>
+            <option value="Tamil">Tamil (தமிழ்)</option>
+          </select>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
-        {filteredPatients.map((patient) => (
-          <div key={patient.id} className="card" style={{ 
-            borderLeft: `4px solid ${patient.risk === 'High' ? 'var(--danger)' : patient.risk === 'Medium' ? 'var(--warning)' : 'var(--success)'}` 
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--primary-subtle)', border: '1px solid var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={20} color="var(--primary)" />
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)' }}>{patient.full_name}</h4>
-                  <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {patient.id.slice(0,8)}</p>
-                </div>
-              </div>
-              <span className={`risk-${patient.risk}`} style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                {patient.risk.toUpperCase()}
-              </span>
-            </div>
-
-            {patient.alerts.length > 0 && (
-              <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', padding: '0.65rem 0.85rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
-                {patient.alerts.map((a, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <AlertTriangle size={14} /> {a}
-                  </p>
-                ))}
-              </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
-              <button 
-                onClick={() => fetchHistory(patient)}
-                style={{ 
-                  background: 'var(--bg-body)', 
-                  color: 'var(--text-main)', 
-                  border: '1px solid var(--border)', 
-                  fontSize: '0.85rem', 
-                  width: '100%',
-                  fontWeight: 600 
-                }}
-              >
-                View History
-              </button>
-              <button 
-                onClick={() => generateReport(patient)}
-                style={{ 
-                  background: 'var(--primary)', 
-                  color: '#ffffff', 
-                  fontSize: '0.85rem', 
-                  width: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '0.4rem',
-                  fontWeight: 600 
-                }}
-              >
-                <FileText size={16} />
-                Generate Report
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {filteredPatients.length === 0 && (
-          <div className="card" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>No assigned patients found.</p>
-            <p style={{ fontSize: '0.875rem', margin: 0 }}>Navigate to "Assign Patients" to map unassigned patients to your roster.</p>
-          </div>
-        )}
+      {/* Search Input */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+        <div className="search-box" style={{ maxWidth: '420px' }}>
+          <Search size={16} color="var(--text-muted)" />
+          <input 
+            type="text" 
+            placeholder="Search patients by name or ID..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
+      {/* Patients Table Panel */}
+      <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+            Assigned Cohort ({filteredPatients.length})
+          </h3>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Patient Information</th>
+                <th style={{ textAlign: 'left' }}>Clinical Triage Status</th>
+                <th style={{ textAlign: 'left' }}>Active Alerts</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPatients.map((patient) => {
+                const badge = getStatusBadge(patient.risk);
+                return (
+                  <tr key={patient.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ 
+                          width: '36px', 
+                          height: '36px', 
+                          borderRadius: '6px', 
+                          background: 'var(--primary-light)', 
+                          color: 'var(--primary-deep)',
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontWeight: 600,
+                          fontSize: '0.88rem'
+                        }}>
+                          {patient.full_name ? patient.full_name.charAt(0).toUpperCase() : <User size={16} />}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{patient.full_name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>ID: {patient.id.slice(0, 10)}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className={`badge ${badge.class}`}>
+                        {badge.label}
+                      </span>
+                    </td>
+
+                    <td>
+                      {patient.alerts && patient.alerts.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          {patient.alerts.map((a, i) => (
+                            <span key={i} className="badge badge-danger" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem' }}>
+                              <AlertTriangle size={11} /> {a}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--success)', fontWeight: 500 }}>
+                          Normal Range
+                        </span>
+                      )}
+                    </td>
+
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                        <button 
+                          type="button"
+                          onClick={() => fetchHistory(patient)} 
+                          className="btn-secondary" 
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                        >
+                          Telemetry <ChevronRight size={13} />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => generateReport(patient)} 
+                          className="btn-outline" 
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                          title="Generate Clinical Report"
+                        >
+                          <FileText size={13} /> Report ({reportLanguage})
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredPatients.length === 0 && (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    No assigned patients found matching criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Selected Patient Drawer / Modal */}
       {selectedPatient && (
         <div style={{ 
           position: 'fixed', 
           inset: 0, 
-          background: 'rgba(15, 23, 42, 0.6)', 
+          background: 'rgba(52, 69, 74, 0.45)', 
           backdropFilter: 'blur(2px)', 
           display: 'flex', 
           alignItems: 'center', 
@@ -160,76 +227,51 @@ const Patients = () => {
           zIndex: 1000, 
           padding: '1.5rem' 
         }}>
-          <div className="card" style={{ width: '100%', maxWidth: '950px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '2rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '1.75rem' }}>
             <button 
+              type="button"
               onClick={() => setSelectedPatient(null)}
-              style={{ 
-                position: 'absolute', 
-                right: '1.25rem', 
-                top: '1.25rem', 
-                width: 'auto', 
-                background: 'var(--bg-body)', 
-                border: '1px solid var(--border)',
-                color: 'var(--text-muted)',
-                padding: '0.4rem',
-                borderRadius: '0.375rem'
-              }}
+              style={{ position: 'absolute', right: '1.25rem', top: '1.25rem', width: '32px', height: '32px', borderRadius: '6px', background: 'var(--bg-body)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}
             >
-              <X size={20} />
+              <X size={16} />
             </button>
-            
-            <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', color: 'var(--text-main)' }}>
-              {selectedPatient.full_name} &mdash; Full Clinical History
+
+            <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.3rem', fontWeight: 700 }}>
+              {selectedPatient.full_name} &mdash; Clinical Telemetry History
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+            <p style={{ margin: '0 0 1.25rem 0', color: 'var(--text-muted)', fontSize: '0.82rem', fontFamily: 'monospace' }}>
               Patient ID: {selectedPatient.id}
             </p>
 
             {loadingHistory ? (
-              <p style={{ color: 'var(--text-muted)' }}>Loading records...</p>
+              <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading records...</p>
             ) : (
-              <>
-                <div style={{ height: '280px', marginBottom: '2rem', padding: '1rem 0', background: 'var(--bg-body)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ height: '260px', marginBottom: '1.25rem', background: 'var(--bg-body)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={history}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="timestamp" tick={{fill: '#64748b', fontSize: 11}} tickFormatter={(t) => new Date(t).toLocaleTimeString()} />
-                      <YAxis tick={{fill: '#64748b', fontSize: 11}} />
-                      <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '0.5rem', color: '#0f172a', fontSize: '0.85rem' }} />
-                      <Line type="monotone" dataKey="heart_rate" stroke="#dc2626" name="Heart Rate (BPM)" dot={false} strokeWidth={2} />
-                      <Line type="monotone" dataKey="spo2" stroke="#0284c7" name="SpO2 (%)" dot={false} strokeWidth={2} />
-                      <Line type="monotone" dataKey="temperature" stroke="#d97706" name="Temp (°C)" dot={false} strokeWidth={2} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#D7E7E9" />
+                      <XAxis dataKey="timestamp" tick={{ fill: '#8A9A9E', fontSize: 10 }} tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })} />
+                      <YAxis tick={{ fill: '#8A9A9E', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ background: '#FFFFFF', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.82rem' }} />
+                      <Line type="monotone" dataKey="heart_rate" stroke="#D94848" strokeWidth={2} name="Heart Rate" dot={false} />
+                      <Line type="monotone" dataKey="spo2" stroke="#109DA6" strokeWidth={2} name="SpO2" dot={false} />
+                      <Line type="monotone" dataKey="temperature" stroke="#D9822B" strokeWidth={2} name="Temp" dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
 
-                <div style={{ overflowX: 'auto' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left' }}>Date & Time</th>
-                        <th style={{ textAlign: 'left' }}>Heart Rate (BPM)</th>
-                        <th style={{ textAlign: 'left' }}>SpO2 (%)</th>
-                        <th style={{ textAlign: 'left' }}>Temp (°C)</th>
-                        <th style={{ textAlign: 'left' }}>BP (mmHg)</th>
-                        <th style={{ textAlign: 'left' }}>Risk Level</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {history.slice().reverse().map((d, i) => (
-                        <tr key={i}>
-                          <td>{new Date(d.timestamp).toLocaleString()}</td>
-                          <td style={{ fontWeight: 600 }}>{d.heart_rate}</td>
-                          <td style={{ fontWeight: 600 }}>{d.spo2}</td>
-                          <td style={{ fontWeight: 600 }}>{d.temperature}</td>
-                          <td style={{ fontWeight: 600 }}>{d.systolic}/{d.diastolic}</td>
-                          <td className={`risk-${d.risk_level}`}>{d.risk_level}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button 
+                    type="button"
+                    onClick={() => generateReport(selectedPatient)} 
+                    className="btn-primary"
+                    style={{ padding: '0.55rem 1rem' }}
+                  >
+                    <FileText size={15} /> Generate {reportLanguage} Report
+                  </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

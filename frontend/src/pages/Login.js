@@ -7,55 +7,65 @@ import { Activity } from 'lucide-react';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useUser();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    setLoading(true);
     try {
       const res = await axios.post('http://127.0.0.1:5001/login', { username, password });
       if (res.data && res.data.user) {
         login(res.data.user);
         navigate(res.data.user.role === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
       } else {
-        console.error('Login response missing user data:', res.data);
         alert('Login failed: Invalid response from server');
       }
     } catch (err) {
       console.error('Login error:', err);
       const message = err.response?.data?.error || 'Login failed. Please check your credentials.';
       alert(message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleQuickLogin = (u, p) => {
+    setUsername(u);
+    setPassword(p);
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
+        {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '12px', 
-            background: 'var(--primary-subtle)', 
-            border: '1px solid var(--primary-light)',
+            width: '44px', 
+            height: '44px', 
+            borderRadius: '10px', 
+            background: 'var(--primary-light)', 
+            border: '1px solid var(--border)',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            margin: '0 auto 1rem'
+            margin: '0 auto 0.85rem'
           }}>
-            <Activity size={26} color="var(--primary)" />
+            <Activity size={24} color="var(--primary-deep)" />
           </div>
-          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: 'var(--text-main)', fontWeight: 700 }}>
-            HealthConnect Portal
-          </h2>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            Rural Health Monitoring System
+          <h1 style={{ margin: '0 0 0.35rem 0', fontSize: '1.45rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            HealthConnect
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Rural Health Monitoring & Telemetry Portal
           </p>
         </div>
 
+        {/* Login Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+          <div style={{ marginBottom: '1.15rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
               Username
             </label>
             <input 
@@ -67,34 +77,82 @@ const Login = () => {
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-              Password
-            </label>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Password
+              </label>
+              <button 
+                type="button" 
+                onClick={() => alert('Please contact clinical administrator to reset credentials.')}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  padding: 0, 
+                  color: 'var(--primary-deep)', 
+                  fontSize: '0.8rem', 
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
             <input 
               type="password" 
-              placeholder="Enter your password" 
+              placeholder="••••••••" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required 
             />
           </div>
 
-          <button type="submit" style={{ width: '100%', padding: '0.75rem' }}>
-            Sign In
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="btn-primary" 
+            style={{ width: '100%', padding: '0.75rem', fontSize: '0.92rem' }}
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
+        {/* Quick Demo Credentials for Fast Evaluation */}
+        <div style={{ marginTop: '1.5rem', padding: '0.85rem', background: 'var(--primary-subtle)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary-deep)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center' }}>
+            Quick Demo Shortcuts
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              type="button" 
+              onClick={() => handleQuickLogin('dr_smith', 'doctor123')}
+              className="btn-secondary"
+              style={{ flex: 1, padding: '0.4rem 0.5rem', fontSize: '0.78rem' }}
+            >
+              Doctor: dr_smith
+            </button>
+            <button 
+              type="button" 
+              onClick={() => handleQuickLogin('patient1', 'patient123')}
+              className="btn-secondary"
+              style={{ flex: 1, padding: '0.4rem 0.5rem', fontSize: '0.78rem' }}
+            >
+              Patient: patient1
+            </button>
+          </div>
+        </div>
+
+        {/* Register Prompt */}
         <div style={{ 
           textAlign: 'center', 
           marginTop: '1.5rem', 
           paddingTop: '1.25rem', 
           borderTop: '1px solid var(--border-subtle)',
-          fontSize: '0.875rem',
+          fontSize: '0.85rem',
           color: 'var(--text-muted)'
         }}>
           Don't have an account?{' '}
-          <Link to="/signup" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+          <Link to="/signup" style={{ color: 'var(--primary-deep)', textDecoration: 'none', fontWeight: 600 }}>
             Register here
           </Link>
         </div>
