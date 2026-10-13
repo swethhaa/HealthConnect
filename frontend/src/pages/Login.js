@@ -31,11 +31,6 @@ const Login = () => {
     }
   };
 
-  const handleQuickLogin = (u, p) => {
-    setUsername(u);
-    setPassword(p);
-  };
-
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -116,31 +111,6 @@ const Login = () => {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-
-        {/* Quick Demo Credentials for Fast Evaluation */}
-        <div style={{ marginTop: '1.5rem', padding: '0.85rem', background: 'var(--primary-subtle)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary-deep)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center' }}>
-            Quick Demo Shortcuts
-          </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button 
-              type="button" 
-              onClick={() => handleQuickLogin('dr_smith', 'doctor123')}
-              className="btn-secondary"
-              style={{ flex: 1, padding: '0.4rem 0.5rem', fontSize: '0.78rem' }}
-            >
-              Doctor: dr_smith
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleQuickLogin('patient1', 'patient123')}
-              className="btn-secondary"
-              style={{ flex: 1, padding: '0.4rem 0.5rem', fontSize: '0.78rem' }}
-            >
-              Patient: patient1
-            </button>
-          </div>
-        </div>
 
         {/* Register Prompt */}
         <div style={{ 

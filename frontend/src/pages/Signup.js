@@ -109,8 +109,14 @@ const Signup = () => {
               placeholder="Choose a password" 
               value={formData.password} 
               onChange={(e) => setFormData({...formData, password: e.target.value})} 
+              minLength={8}
+              pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}"
+              title="Use at least 8 characters, including an uppercase letter, a lowercase letter, and a special character."
               required 
             />
+            <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              At least 8 characters, with one uppercase letter, one lowercase letter, and one special character.
+            </p>
           </div>
 
           {/* Account Role Selector */}
