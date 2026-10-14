@@ -1,11 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Search, User, AlertTriangle, X, FileText, ChevronRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useUser } from '../context/UserContext';
 
 const Patients = () => {
-  const { user } = useUser();
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -15,16 +13,16 @@ const Patients = () => {
 
   const fetchPatients = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-assigned-patients?doctor_id=${user.id}`);
+      const res = await api.get('/get-assigned-patients');
       const patientsWithRisk = await Promise.all(res.data.map(async (p) => {
-        const riskRes = await axios.get(`http://localhost:5001/alerts?user_id=${p.id}`);
+        const riskRes = await api.get('/alerts', { params: { user_id: p.id } });
         return { ...p, risk: riskRes.data.current_risk, alerts: riskRes.data.alerts };
       }));
       setPatients(patientsWithRisk);
     } catch (err) { 
       console.error('Error fetching assigned patients:', err); 
     }
-  }, [user.id]);
+  }, []);
 
   useEffect(() => {
     fetchPatients();
@@ -34,7 +32,7 @@ const Patients = () => {
     setLoadingHistory(true);
     setSelectedPatient(patient);
     try {
-      const res = await axios.get(`http://localhost:5001/get-data?user_id=${patient.id}`);
+      const res = await api.get('/get-data', { params: { user_id: patient.id } });
       setHistory(res.data.reverse());
     } catch (err) { 
       console.error('Error fetching patient clinical history:', err); 
@@ -49,7 +47,9 @@ const Patients = () => {
 
   const generateReport = async (patient) => {
     try {
-      const res = await axios.get(`http://localhost:5001/generate-report?patient_id=${patient.id}&language=${reportLanguage}`);
+      const res = await api.get('/generate-report', {
+        params: { patient_id: patient.id, language: reportLanguage },
+      });
       alert(`Report generated for ${patient.full_name} in ${reportLanguage}!`);
       console.log('Report:', res.data);
     } catch (err) {

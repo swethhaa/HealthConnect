@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import api from '../api';
 import { 
   LayoutDashboard, 
   History, 
@@ -18,9 +19,15 @@ const Layout = ({ children }) => {
   const { user, logout } = useUser();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await api.post('/logout');
+    } catch (error) {
+      console.error('Unable to invalidate the server session:', error);
+    } finally {
+      logout();
+      navigate('/login');
+    }
   };
 
   const navItems = user?.role === 'doctor' ? [

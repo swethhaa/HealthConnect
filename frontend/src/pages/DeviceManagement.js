@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useUser } from '../context/UserContext';
 import { Cpu, Plus, Wifi, WifiOff } from 'lucide-react';
 
@@ -10,7 +10,7 @@ const DeviceManagement = () => {
 
   const fetchDevices = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-devices?user_id=${user.id}`);
+      const res = await api.get('/get-devices', { params: { user_id: user.id } });
       setDevices(res.data);
     } catch (err) { 
       console.error('Error fetching devices:', err); 
@@ -25,7 +25,7 @@ const DeviceManagement = () => {
     e.preventDefault();
     if (!newDevice.trim()) return;
     try {
-      await axios.post('http://localhost:5001/add-device', { name: newDevice, user_id: user.id });
+      await api.post('/add-device', { name: newDevice, user_id: user.id });
       setNewDevice('');
       fetchDevices();
     } catch (err) { 

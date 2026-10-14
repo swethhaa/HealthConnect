@@ -1,6 +1,9 @@
 import sqlite3
+import getpass
+import os
+import requests
 
-conn = sqlite3.connect('health_monitoring.db')
+conn = sqlite3.connect(os.environ.get("HEALTHCONNECT_DB_PATH", "health_monitoring.db"))
 cursor = conn.cursor()
 
 # Check data counts
@@ -20,23 +23,31 @@ data = cursor.execute('SELECT user_id, heart_rate, spo2, temperature, systolic, 
 for row in data:
     print(f'Patient: {row[0][:8]}... HR:{row[1]} SPO2:{row[2]} Temp:{row[3]} BP:{row[4]}/{row[5]} Glucose:{row[6]} Risk:{row[7]}')
 
-# Check API endpoint
-print('\n=== TESTING API ENDPOINTS ===')
-import requests
-
+# Check authenticated API access for the current patient.
+print('\n=== TESTING AUTHENTICATED PATIENT API ===')
+username = input("Patient username: ").strip()
+password = getpass.getpass("Patient password: ")
 try:
-    # Test get-patients endpoint
-    response = requests.get('http://localhost:5001/get-patients')
-    print(f'GET /get-patients: {response.status_code}')
-    print(f'  Patients returned: {len(response.json())}')
-    
-    # Test get-data endpoint for a patient
-    if response.json():
-        patient_id = response.json()[0]['id']
-        data_response = requests.get(f'http://localhost:5001/get-data?user_id={patient_id}')
-        print(f'GET /get-data?user_id={patient_id[:8]}...: {data_response.status_code}')
-        print(f'  Health records returned: {len(data_response.json())}')
-except Exception as e:
-    print(f'Error testing API: {e}')
+    session = requests.Session()
+    response = session.post(
+        "http://127.0.0.1:5001/login",
+        json={"username": username, "password": password},
+        timeout=5,
+    )
+    if response.status_code != 200:
+        print(f'Login failed: {response.json().get("error", response.reason)}')
+    elif response.json()["user"]["role"] != "patient":
+        print("The data check requires a patient account.")
+    else:
+        session.headers["Authorization"] = f'Bearer {response.json()["token"]}'
+        data_response = session.get(
+            "http://127.0.0.1:5001/get-data",
+            params={"user_id": response.json()["user"]["id"]},
+            timeout=5,
+        )
+        print(f'GET /get-data: {data_response.status_code}')
+        print(f'  Patient readings returned: {len(data_response.json())}')
+except requests.RequestException as error:
+    print(f'API check failed: {error}')
 
 conn.close()

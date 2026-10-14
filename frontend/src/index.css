@@ -416,3 +416,41 @@ tr:hover td {
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .report-print-area,
+  .report-print-area * {
+    visibility: visible !important;
+  }
+
+  .report-print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    color: #172b32 !important;
+    background: #fff !important;
+  }
+
+  .report-print-area .card {
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .report-print-area [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  .report-print-area * {
+    break-inside: avoid;
+  }
+}

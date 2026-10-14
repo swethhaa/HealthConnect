@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import api from "../api";
 import { useUser } from "../context/UserContext";
 import { 
   Heart, 
@@ -22,23 +22,39 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const PatientDashboard = () => {
   const { user } = useUser();
   const [data, setData] = useState([]);
+  const [trendData, setTrendData] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [risk, setRisk] = useState("Low");
   const [devices, setDevices] = useState([]);
   const [timeFilter, setTimeFilter] = useState("7 Days");
+  const [loadingData, setLoadingData] = useState(true);
+  const [dataError, setDataError] = useState('');
+  const [simulation, setSimulation] = useState(null);
+  const [simulationMode, setSimulationMode] = useState('normal');
+  const [simulationInterval, setSimulationInterval] = useState(5);
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationError, setSimulationError] = useState('');
 
   const fetchData = useCallback(async () => {
+    setDataError('');
     try {
-      const res = await axios.get(`http://localhost:5001/get-data?user_id=${user.id}`);
-      setData(res.data);
+      const [latestResponse, trendResponse] = await Promise.all([
+        api.get('/get-data', { params: { user_id: user.id } }),
+        api.get('/get-data', { params: { user_id: user.id, period: timeFilter } }),
+      ]);
+      setData(latestResponse.data);
+      setTrendData(trendResponse.data.filter((item) => Number.isFinite(Date.parse(item.timestamp))));
     } catch (err) { 
       console.error('Error fetching patient vitals data:', err); 
+      setDataError(err.response?.data?.error || 'Unable to load health readings. Please try again.');
+    } finally {
+      setLoadingData(false);
     }
-  }, [user.id]);
+  }, [user.id, timeFilter]);
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/alerts?user_id=${user.id}`);
+      const res = await api.get('/alerts', { params: { user_id: user.id } });
       setAlerts(res.data.alerts || []);
       setRisk(res.data.current_risk || "Low");
     } catch (err) { 
@@ -48,55 +64,71 @@ const PatientDashboard = () => {
 
   const fetchDevices = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-devices?user_id=${user.id}`);
+      const res = await api.get('/get-devices', { params: { user_id: user.id } });
       setDevices(res.data || []);
     } catch (err) { 
       console.error('Error fetching patient devices:', err); 
     }
   }, [user.id]);
 
+  const fetchSimulationStatus = useCallback(async () => {
+    try {
+      const res = await api.get('/simulation/status');
+      setSimulation(res.data);
+      if (res.data.status === 'running') {
+        setSimulationMode(res.data.mode);
+        setSimulationInterval(res.data.interval_seconds);
+      }
+      if (res.data.status === 'error') {
+        setSimulationError(res.data.error || 'The simulator stopped unexpectedly.');
+      }
+    } catch (err) {
+      setSimulationError(err.response?.data?.error || 'Unable to read simulator status.');
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
     fetchAlerts();
     fetchDevices();
+    fetchSimulationStatus();
 
     const interval = setInterval(() => {
       fetchData();
       fetchAlerts();
-      fetchDevices();
-    }, 5000);
+      fetchSimulationStatus();
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, [fetchData, fetchAlerts, fetchDevices]);
+  }, [fetchData, fetchAlerts, fetchDevices, fetchSimulationStatus]);
 
-  const latest = data[0] || {};
-  const lastUpdatedText = latest.timestamp 
-    ? new Date(latest.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
-    : 'No data';
-
-  // Filter historical data for chart
-  const getFilteredData = () => {
-    if (!data.length) return [];
-    const now = new Date();
-    
-    return data.filter(item => {
-      const itemDate = new Date(item.timestamp);
-      if (timeFilter === 'Today') {
-        return itemDate.toDateString() === now.toDateString();
-      } else if (timeFilter === '7 Days') {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 7);
-        return itemDate >= sevenDaysAgo;
-      } else if (timeFilter === '30 Days') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        return itemDate >= thirtyDaysAgo;
-      }
-      return true;
-    }).slice().reverse();
+  const controlSimulation = async (action) => {
+    setSimulationLoading(true);
+    setSimulationError('');
+    try {
+      const response = action === 'start'
+        ? await api.post('/simulation/start', {
+          mode: simulationMode,
+          interval_seconds: Number(simulationInterval),
+        })
+        : await api.post('/simulation/stop');
+      setSimulation(response.data);
+      fetchData();
+      fetchAlerts();
+    } catch (err) {
+      setSimulationError(err.response?.data?.error || 'Unable to update the simulation. Please try again.');
+    } finally {
+      setSimulationLoading(false);
+      fetchSimulationStatus();
+    }
   };
 
-  const filteredHistory = getFilteredData();
+  const latest = data[0] || {};
+  const latestDate = latest.timestamp ? new Date(latest.timestamp) : null;
+  const lastUpdatedText = latestDate && Number.isFinite(latestDate.getTime())
+    ? latestDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : 'No data';
+  const filteredHistory = trendData;
 
   // Vital Status Helpers
   const getHeartRateStatus = (hr) => {
@@ -168,15 +200,107 @@ const PatientDashboard = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <span className="badge badge-success">
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)' }} />
-            Telemetry Active
+          <span className={`badge ${simulation?.status === 'running' ? 'badge-success' : 'badge-warning'}`}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: simulation?.status === 'running' ? 'var(--success)' : 'var(--warning)' }} />
+            {simulation?.status === 'running' ? 'Synthetic Simulation Active' : simulation ? 'Simulation Stopped' : 'Checking simulation status…'}
           </span>
           <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Clock size={14} /> Last sync: <strong>{lastUpdatedText}</strong>
           </div>
         </div>
       </div>
+
+      <section
+        className="card"
+        style={{
+          marginBottom: '1.5rem',
+          border: `1px solid ${simulation?.mode === 'abnormal' && simulation.status === 'running' ? 'var(--danger-border)' : 'var(--border)'}`,
+          background: simulation?.mode === 'abnormal' && simulation.status === 'running' ? 'var(--danger-light)' : undefined,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ margin: '0 0 0.4rem', fontSize: '1rem', color: 'var(--text-main)' }}>
+              SIMULATION MODE — NO PHYSICAL SENSOR CONNECTED
+            </h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem', maxWidth: '680px' }}>
+              All generated values are synthetic demonstration data, not medical measurements or diagnoses.
+              The backend calculates risk from each stored reading.
+            </p>
+            {simulation?.mode === 'abnormal' && simulation.status === 'running' && (
+              <span className="badge badge-danger" style={{ marginTop: '0.65rem' }}>
+                ABNORMAL SYNTHETIC READINGS ACTIVE
+              </span>
+            )}
+          </div>
+          <span className={`badge ${simulation?.status === 'running' ? 'badge-success' : simulation?.status === 'error' ? 'badge-danger' : 'badge-warning'}`}>
+            {simulation?.status === 'running' ? 'RUNNING' : simulation?.status === 'error' ? 'ERROR' : simulation ? 'STOPPED' : 'CHECKING STATUS'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'end', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+          <label style={{ display: 'grid', gap: '0.3rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Simulation profile
+            <select
+              value={simulationMode}
+              onChange={(event) => setSimulationMode(event.target.value)}
+              disabled={simulationLoading || simulation?.status === 'running'}
+              style={{ marginBottom: 0 }}
+            >
+              <option value="normal">Normal</option>
+              <option value="abnormal">Abnormal (demonstration alert)</option>
+            </select>
+          </label>
+          <label style={{ display: 'grid', gap: '0.3rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Interval (seconds)
+            <input
+              type="number"
+              min={simulation?.interval_bounds?.minimum || 5}
+              max={simulation?.interval_bounds?.maximum || 3600}
+              step="1"
+              value={simulationInterval}
+              onChange={(event) => setSimulationInterval(event.target.value)}
+              disabled={simulationLoading || simulation?.status === 'running'}
+              style={{ width: '140px', marginBottom: 0 }}
+            />
+          </label>
+          {simulation?.status === 'running' ? (
+            <button type="button" className="btn-secondary" onClick={() => controlSimulation('stop')} disabled={simulationLoading}>
+              {simulationLoading ? 'Stopping…' : 'Stop simulation'}
+            </button>
+          ) : (
+            <button type="button" className="btn-primary" onClick={() => controlSimulation('start')} disabled={simulationLoading}>
+              {simulationLoading ? 'Starting…' : 'Start simulation'}
+            </button>
+          )}
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+            Last successful reading: {simulation?.last_reading_at || 'None yet'}
+          </span>
+        </div>
+        {simulationError && (
+          <p role="alert" style={{ margin: '0.8rem 0 0', color: 'var(--danger)', fontSize: '0.85rem' }}>
+            {simulationError}
+          </p>
+        )}
+        {simulation?.mode === 'abnormal' && (
+          <p style={{ margin: '0.75rem 0 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            {simulation.status === 'running'
+              ? 'Demo profile: elevated heart rate, temperature, blood pressure and glucose with reduced SpO₂. Stop the simulation before switching profiles.'
+              : 'Abnormal demo profile selected: elevated heart rate, temperature, blood pressure and glucose with reduced SpO₂. Start the simulation to generate synthetic alerts.'}
+          </p>
+        )}
+      </section>
+
+      {latest.source === 'unknown' && (
+        <div style={{ marginBottom: '1rem', padding: '0.8rem 1rem', border: '1px solid var(--warning-border)', borderRadius: '8px', color: 'var(--text-main)', background: 'var(--warning-light)', fontSize: '0.85rem' }}>
+          This legacy reading has no recorded origin. It is not presented as a verified physical measurement.
+        </div>
+      )}
+      {dataError && (
+        <div role="alert" style={{ marginBottom: '1rem', padding: '0.8rem 1rem', border: '1px solid var(--danger-border)', borderRadius: '8px', color: 'var(--danger)', background: 'var(--danger-light)' }}>
+          {dataError}
+        </div>
+      )}
 
       {/* 2. Active Clinical Alerts (if any) */}
       {alerts.length > 0 && (
@@ -379,6 +503,11 @@ const PatientDashboard = () => {
             <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               Historical progression of Heart Rate, Blood Oxygen (SpO₂), and Temperature
             </p>
+            {trendData.some((item) => item.simulated || item.unverified) && (
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--warning)' }}>
+                Synthetic readings and/or legacy readings with unverified origin are included in this trend.
+              </p>
+            )}
           </div>
 
           {/* Time Filter Tabs */}
@@ -387,7 +516,10 @@ const PatientDashboard = () => {
               <button
                 key={filter}
                 type="button"
-                onClick={() => setTimeFilter(filter)}
+                onClick={() => {
+                  setLoadingData(true);
+                  setTimeFilter(filter);
+                }}
                 className={`filter-tab ${timeFilter === filter ? 'active' : ''}`}
               >
                 {filter}
@@ -396,7 +528,9 @@ const PatientDashboard = () => {
           </div>
         </div>
 
-        {filteredHistory.length > 0 ? (
+        {loadingData ? (
+          <div role="status" style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading readings…</div>
+        ) : filteredHistory.length > 0 ? (
           <div style={{ height: '320px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredHistory}>
@@ -404,7 +538,12 @@ const PatientDashboard = () => {
                 <XAxis 
                   dataKey="timestamp" 
                   tick={{ fill: '#8A9A9E', fontSize: 11 }} 
-                  tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                  tickFormatter={(t) => {
+                    const date = new Date(t);
+                    return timeFilter === 'Today'
+                      ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  }}
                 />
                 <YAxis tick={{ fill: '#8A9A9E', fontSize: 11 }} />
                 <Tooltip 

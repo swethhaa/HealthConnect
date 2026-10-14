@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { 
   User, 
   AlertTriangle, 
@@ -25,10 +25,10 @@ const DoctorDashboard = () => {
 
   const fetchPatients = useCallback(async () => {
     try {
-      const res = await axios.get('http://localhost:5001/get-patients');
+      const res = await api.get('/get-patients');
       const patientsWithRisk = await Promise.all(res.data.map(async (p) => {
-        const riskRes = await axios.get(`http://localhost:5001/alerts?user_id=${p.id}`);
-        const dataRes = await axios.get(`http://localhost:5001/get-data?user_id=${p.id}`);
+        const riskRes = await api.get('/alerts', { params: { user_id: p.id } });
+        const dataRes = await api.get('/get-data', { params: { user_id: p.id } });
         const latestData = dataRes.data && dataRes.data.length > 0 ? dataRes.data[0] : null;
         return { 
           ...p, 
@@ -53,7 +53,7 @@ const DoctorDashboard = () => {
     setLoadingHistory(true);
     setSelectedPatient(patient);
     try {
-      const res = await axios.get(`http://localhost:5001/get-data?user_id=${patient.id}`);
+      const res = await api.get('/get-data', { params: { user_id: patient.id } });
       setHistory(res.data.reverse());
     } catch (err) { 
       console.error('Error fetching patient clinical history:', err); 

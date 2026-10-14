@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
-import { useUser } from '../context/UserContext';
+import api from '../api';
 import { Plus, Check, Loader, UserPlus, Users } from 'lucide-react';
 
 const AddPatients = () => {
-  const { user } = useUser();
   const [availablePatients, setAvailablePatients] = useState([]);
   const [assignedPatients, setAssignedPatients] = useState([]);
   const [addingPatientId, setAddingPatientId] = useState(null);
@@ -12,22 +10,22 @@ const AddPatients = () => {
 
   const fetchAvailablePatients = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-available-patients?doctor_id=${user.id}`);
+      const res = await api.get('/get-available-patients');
       setAvailablePatients(res.data);
     } catch (err) {
       console.error(err);
       setMessage('Error fetching available patients');
     }
-  }, [user.id]);
+  }, []);
 
   const fetchAssignedPatients = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-assigned-patients?doctor_id=${user.id}`);
+      const res = await api.get('/get-assigned-patients');
       setAssignedPatients(res.data);
     } catch (err) {
       console.error(err);
     }
-  }, [user.id]);
+  }, []);
 
   useEffect(() => {
     fetchAvailablePatients();
@@ -37,10 +35,7 @@ const AddPatients = () => {
   const addPatientToDoctor = async (patientId) => {
     setAddingPatientId(patientId);
     try {
-      await axios.post('http://localhost:5001/add-patient-to-doctor', {
-        doctor_id: user.id,
-        patient_id: patientId
-      });
+      await api.post('/add-patient-to-doctor', { patient_id: patientId });
       setMessage('Patient successfully assigned to your panel.');
       setTimeout(() => setMessage(''), 3000);
       fetchAvailablePatients();

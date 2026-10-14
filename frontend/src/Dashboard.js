@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "./api";
+import { useUser } from "./context/UserContext";
 
 function Dashboard() {
+  const { user } = useUser();
   const [data, setData] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [currentRisk, setCurrentRisk] = useState("Low");
@@ -10,7 +12,7 @@ function Dashboard() {
     const interval = setInterval(() => {
       fetchData();
       fetchAlerts();
-    }, 5000);
+    }, 10000);
     fetchData();
     fetchAlerts();
     return () => clearInterval(interval);
@@ -18,7 +20,7 @@ function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:5000/get-data");
+      const res = await api.get('/get-data', { params: { user_id: user.id } });
       setData(res.data);
     } catch (err) {
       console.error("Error fetching data", err);
@@ -27,7 +29,7 @@ function Dashboard() {
 
   const fetchAlerts = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:5000/alerts");
+      const res = await api.get('/alerts', { params: { user_id: user.id } });
       setAlerts(res.data.alerts);
       setCurrentRisk(res.data.current_risk);
     } catch (err) {

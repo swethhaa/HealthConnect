@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useUser } from '../context/UserContext';
-import { Download, FileText, Globe } from 'lucide-react';
+import { Printer, FileText, Globe } from 'lucide-react';
 
 const ReportGeneration = () => {
   const { user } = useUser();
   const [language, setLanguage] = useState('English');
+  const [period, setPeriod] = useState('7 Days');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,7 +15,9 @@ const ReportGeneration = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`http://localhost:5001/generate-report?patient_id=${user.id}&language=${language}`);
+      const res = await api.get('/generate-report', {
+        params: { patient_id: user.id, language, period },
+      });
       setReport(res.data);
     } catch (err) {
       setError('Error generating report. Please try again.');
@@ -24,32 +27,7 @@ const ReportGeneration = () => {
   };
 
   const downloadPDF = () => {
-    if (!report) return;
-    
-    const content = `
-${report.title}
-${'='.repeat(40)}
-
-${report.language === 'Tamil' ? 'நோயாளியின் பெயர்' : 'Patient Name'}: ${report.patient.name}
-${report.language === 'Tamil' ? 'நோயாளி ID' : 'Patient ID'}: ${report.patient.id}
-${report.language === 'Tamil' ? 'அறிக்கை தேதி' : 'Report Date'}: ${report.report_date}
-
-${report.language === 'Tamil' ? 'சமீபத்திய வாசிப்பு' : 'Latest Reading'}:
-${Object.entries(report.latest_reading).map(([key, value]) => `${key}: ${value}`).join('\n')}
-
-${report.language === 'Tamil' ? '7 நாள் சராசரி' : '7-Day Average'}:
-${Object.entries(report.average_7_days).map(([key, value]) => `${key}: ${value}`).join('\n')}
-
-${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து நிலை' : 'Current Risk Level'}: ${report.risk_level}
-    `;
-
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-    element.setAttribute('download', `Health_Report_${user.full_name}_${new Date().toISOString().split('T')[0]}.txt`);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    if (report) window.print();
   };
 
   const getRiskBadge = (level) => {
@@ -59,7 +37,7 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="report-print-area" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       
       {/* Page Header */}
       <div className="page-header">
@@ -76,7 +54,7 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 320px) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
         
         {/* Controls Panel */}
-        <div className="card">
+        <div className="card" data-print-hide="true">
           <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>
             {language === 'Tamil' ? 'அறிக்கை அமைப்புகள்' : 'Report Configuration'}
           </h3>
@@ -99,10 +77,29 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
             </select>
           </div>
 
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              {language === 'Tamil' ? 'அறிக்கை காலம்' : 'Report Period'}
+            </label>
+            <select
+              value={period}
+              onChange={(e) => {
+                setPeriod(e.target.value);
+                setReport(null);
+              }}
+              style={{ marginBottom: 0 }}
+            >
+              <option value="Today">{language === 'Tamil' ? 'இன்று' : 'Today'}</option>
+              <option value="7 Days">{language === 'Tamil' ? '7 நாட்கள்' : '7 Days'}</option>
+              <option value="30 Days">{language === 'Tamil' ? '30 நாட்கள்' : '30 Days'}</option>
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={generateReport}
             disabled={loading}
+            data-print-hide="true"
             className="btn-primary"
             style={{ width: '100%', padding: '0.7rem 1rem' }}
           >
@@ -118,10 +115,11 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
               type="button"
               onClick={downloadPDF}
               className="btn-secondary"
+              data-print-hide="true"
               style={{ width: '100%', marginTop: '0.75rem', padding: '0.7rem 1rem' }}
             >
-              <Download size={16} />
-              {language === 'Tamil' ? 'பதிவிறக்கவும்' : 'Download Document'}
+              <Printer size={16} />
+              {language === 'Tamil' ? 'PDF ஆக அச்சிடு / சேமி' : 'Print / Save as PDF'}
             </button>
           )}
 
@@ -150,13 +148,37 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
                     {report.title}
                   </h2>
                   <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Rural Healthcare Portal &bull; Medical Records Output
+                    {language === 'Tamil' ? 'செயற்கைத் தரவுகள் இருக்கலாம்' : 'Synthetic demonstration data may be included'}
                   </p>
                 </div>
                 <div style={{ textAlign: 'right', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                   <strong>{language === 'Tamil' ? 'தேதி' : 'Date'}:</strong> {report.report_date}
                 </div>
               </div>
+
+              {report.contains_simulated_data && (
+                <div style={{
+                  padding: '0.8rem 1rem',
+                  marginBottom: '1.25rem',
+                  border: '1px solid var(--warning-border)',
+                  borderRadius: '8px',
+                  background: 'var(--warning-light)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                }}>
+                  {language === 'Tamil'
+                    ? 'செயற்கை உருவகப்படுத்தப்பட்ட தரவுகள் அடங்கும் — மருத்துவ அளவீடோ அல்லது நோயறிதலோ அல்ல.'
+                    : `Contains synthetic simulation data (${report.simulated_reading_count} reading(s) in the selected period${report.latest_reading_simulated ? ', including the latest reading' : ''}). These are not medical measurements or diagnoses.`}
+                </div>
+              )}
+              {report.contains_unverified_data && (
+                <div style={{ padding: '0.8rem 1rem', marginBottom: '1.25rem', border: '1px solid var(--warning-border)', borderRadius: '8px', background: 'var(--warning-light)', fontSize: '0.85rem' }}>
+                  {language === 'Tamil'
+                    ? 'சில பழைய பதிவுகளின் மூலம் தெரியவில்லை; அவை உறுதிப்படுத்தப்பட்ட உடல் அளவீடுகளாகக் கருதப்படக்கூடாது.'
+                    : 'Some legacy readings have no recorded origin and cannot be verified as physical measurements.'}
+                </div>
+              )}
 
               <div style={{
                 display: 'grid',
@@ -174,7 +196,7 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
                     <strong style={{ color: 'var(--text-secondary)' }}>{language === 'Tamil' ? 'பெயர்' : 'Patient Name'}:</strong> {report.patient.name}
                   </p>
                   <p style={{ margin: '0.3rem 0', fontSize: '0.9rem' }}>
-                    <strong style={{ color: 'var(--text-secondary)' }}>{language === 'Tamil' ? 'ID' : 'Patient ID'}:</strong> <span style={{ fontFamily: 'monospace' }}>{report.patient.id.slice(0, 10)}</span>
+                    <strong style={{ color: 'var(--text-secondary)' }}>{language === 'Tamil' ? 'ID' : 'Patient ID'}:</strong> <span style={{ fontFamily: 'monospace' }}>{report.patient.id}</span>
                   </p>
                 </div>
                 
@@ -211,8 +233,14 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
               {/* Latest Reading */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{ marginBottom: '0.75rem', fontSize: '1rem', color: 'var(--text-main)', fontWeight: 600 }}>
-                  {language === 'Tamil' ? 'சமீபத்திய வாசிப்பு' : 'Most Recent Vital Telemetry'}
+                  {language === 'Tamil' ? 'சமீபத்திய வாசிப்பு' : 'Latest Reading'}
                 </h3>
+                <p style={{ margin: '0 0 0.75rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  {report.latest_reading_timestamp
+                    ? `${language === 'Tamil' ? 'நேரம்' : 'Timestamp'}: ${report.latest_reading_timestamp}`
+                    : (language === 'Tamil' ? 'இதுவரை வாசிப்புகள் இல்லை' : 'No readings recorded yet')}
+                  {report.latest_reading_simulated && ` · ${language === 'Tamil' ? 'செயற்கை' : 'Synthetic'} (${report.latest_simulation_mode})`}
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
                   {Object.entries(report.latest_reading).map(([key, value]) => (
                     <div key={key} style={{
@@ -225,20 +253,25 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
                         {key.replace('_', ' ')}
                       </p>
                       <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                        {value}
+                        {value === null ? '--' : value}
                       </p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* 7-Day Average */}
+              {/* Selected-period averages */}
               <div>
                 <h3 style={{ marginBottom: '0.75rem', fontSize: '1rem', color: 'var(--text-main)', fontWeight: 600 }}>
-                  {language === 'Tamil' ? '7 நாள் சராசரி' : '7-Day Longitudinal Averages'}
+                  {language === 'Tamil' ? `தேர்ந்தெடுத்த கால சராசரி (${period})` : `Average for ${report.average_period}`}
                 </h3>
+                <p style={{ margin: '0 0 0.75rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  {language === 'Tamil'
+                    ? `${report.period_start} முதல் ${report.period_end} வரை · ${report.reading_count} வாசிப்புகள்`
+                    : `${report.period_start} to ${report.period_end} · ${report.reading_count} reading(s)`}
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
-                  {Object.entries(report.average_7_days).map(([key, value]) => (
+                  {Object.entries(report.averages).map(([key, value]) => (
                     <div key={key} style={{
                       padding: '0.75rem 1rem',
                       background: 'var(--primary-subtle)',
@@ -249,7 +282,7 @@ ${report.language === 'Tamil' ? 'தற்போதைய ஆபத்து ந
                         {key.replace('_', ' ')}
                       </p>
                       <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                        {value}
+                        {value === null ? '--' : value}
                       </p>
                     </div>
                   ))}

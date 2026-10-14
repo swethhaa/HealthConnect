@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { Activity } from 'lucide-react';
 
 const Signup = () => {
@@ -19,7 +19,7 @@ const Signup = () => {
     setLoading(true);
     try {
       setError(null);
-      await axios.post('http://127.0.0.1:5001/signup', formData);
+      await api.post('/signup', formData);
       alert('Account created successfully! Please sign in.');
       navigate('/login');
     } catch (err) {

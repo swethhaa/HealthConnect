@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { useUser } from '../context/UserContext';
 import { Activity } from 'lucide-react';
 
@@ -15,9 +15,9 @@ const Login = () => {
     e?.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://127.0.0.1:5001/login', { username, password });
+      const res = await api.post('/login', { username, password });
       if (res.data && res.data.user) {
-        login(res.data.user);
+        login(res.data.user, res.data.token);
         navigate(res.data.user.role === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
       } else {
         alert('Login failed: Invalid response from server');

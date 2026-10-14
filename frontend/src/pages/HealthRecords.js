@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useUser } from '../context/UserContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Table, BarChart2 } from 'lucide-react';
@@ -11,7 +11,7 @@ const HealthRecords = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/get-data?user_id=${user.id}`);
+      const res = await api.get('/get-data', { params: { user_id: user.id } });
       setData(res.data.reverse());
     } catch (err) { 
       console.error('Error fetching health records:', err); 
@@ -99,6 +99,7 @@ const HealthRecords = () => {
                   <th style={{ textAlign: 'left' }}>Blood Pressure</th>
                   <th style={{ textAlign: 'left' }}>Glucose</th>
                   <th style={{ textAlign: 'left' }}>Triage Risk Level</th>
+                  <th style={{ textAlign: 'left' }}>Origin</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,6 +115,13 @@ const HealthRecords = () => {
                       <span className={`badge ${d.risk_level === 'High' ? 'badge-danger' : d.risk_level === 'Medium' ? 'badge-warning' : 'badge-success'}`}>
                         {d.risk_level}
                       </span>
+                    </td>
+                    <td>
+                      {d.source === 'simulation'
+                        ? `Synthetic (${d.simulation_mode})`
+                        : d.source === 'unknown'
+                          ? 'Unverified legacy'
+                          : 'Recorded'}
                     </td>
                   </tr>
                 ))}
